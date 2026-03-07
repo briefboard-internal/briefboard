@@ -527,26 +527,9 @@ function renderTags() {
 //  LOAD
 // ══════════════════════════════════════════════
 async function loadAll() {
-  const btn = document.getElementById('refreshBtn');
-  if (btn) { btn.disabled = true; btn.textContent = '取得中...'; }
-  errorCount = 0;
-
-  const srcs = ALL_SOURCES.filter(s => activeSrcs.includes(s.id));
-  if (!srcs.length) { cachedItems = []; renderColumns(); if (btn) { btn.disabled = false; btn.textContent = '↻ 更新'; } return; }
-
-  const results = await Promise.allSettled(srcs.map(s => fetchRSS(s)));
-  cachedItems = [];
-  results.forEach((r, i) => {
-    if (r.status === 'fulfilled' && r.value.length > 0) cachedItems.push(...r.value);
-    else errorCount++;
-  });
-  cachedItems.sort((a,b) => new Date(b.pubDate||0) - new Date(a.pubDate||0));
-
-  // キャッシュクリア→再描画
+  // キャッシュクリア→各列が個別にGoogle News RSSを取得し直す
   Object.keys(gnewsCache).forEach(k => delete gnewsCache[k]);
   renderColumns();
-  if (btn) { btn.disabled = false; btn.textContent = '↻ 更新'; }
-  document.getElementById('ftTxt').innerHTML = `<span class="live-dot"></span>最終更新 <span style="color:var(--accent2)">${new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})}</span>`;
 }
 
 // ══════════════════════════════════════════════
@@ -558,27 +541,87 @@ function renderColumns() {
   grid.innerHTML = '';
 
   if (!keywords.length) {
-    info.textContent = cachedItems.length ? `${cachedItems.length} 件取得` : '';
+    info.textContent = '';
     grid.innerHTML = '<div style="color:var(--text-dim);font-size:13px;padding:40px 20px;">← キーワードを追加すると列が表示されます</div>';
     return;
   }
-  // RSSが全滅でも列（ヘッダー＋空カード）は表示する
 
-  info.textContent = `${keywords.length} 列 / ${cachedItems.length} 件取得`;
+  info.textContent = `${keywords.length} 列`;
   keywords.forEach((kw, i) => {
-    const terms = kw.split(/\s+/).filter(Boolean);
-    const matched = cachedItems.filter(item => {
-      const hay = (item.title + ' ' + (item.source||'')).toLowerCase();
-      return terms.every(term => {
-        const aliases = getAliases(term);
-        return aliases.some(al => hay.includes(al.toLowerCase()));
-      });
-    });
-    gnewsCache[kw.toLowerCase()] = matched; // キャッシュに保存
-    const col = buildCol(kw, matched, i);
+    const col = buildCol(kw, [], i); // 空で描画してから非同期取得
     col.style.animationDelay = `${i * 55}ms`;
     grid.appendChild(col);
+    fetchByKeyword(kw, i); // Google News RSS で過去記事取得
   });
+}
+
+// Google News RSS（キーワード検索）で過去記事を取得
+async function fetchByKeyword(kw, idx) {
+  const cacheKey = kw.toLowerCase();
+  const body = document.getElementById(`col-body-${idx}`);
+  const countEl = document.getElementById(`col-count-${idx}`);
+  if (!body) return;
+
+  // キャッシュあれば即表示
+  if (gnewsCache[cacheKey]) {
+    renderArticleCards(body, gnewsCache[cacheKey], idx, kw);
+    if (countEl) countEl.textContent = gnewsCache[cacheKey].length + ' 件';
+    return;
+  }
+
+  // ローディング表示
+  body.innerHTML = `<div class="col-empty"><div class="col-empty-icon">📡</div><div class="col-empty-txt">「${esc(kw)}」を検索中...</div></div>`;
+  if (countEl) countEl.textContent = '取得中...';
+
+  const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(kw)}&hl=ja&gl=JP&ceid=JP:ja`;
+  let items = null;
+
+  const proxies = [
+    async () => {
+      const r = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}&count=100`, {signal: AbortSignal.timeout(10000)});
+      const d = await r.json();
+      if (!d.items?.length) throw new Error('empty');
+      return d.items.map(i => {
+        const titleRaw = i.title || '';
+        const dash = titleRaw.lastIndexOf(' - ');
+        return {
+          title:   dash > 0 ? titleRaw.slice(0, dash) : titleRaw,
+          link:    safeUrl(i.link) || safeUrl(i.guid) || '',
+          pubDate: i.pubDate || '',
+          source:  dash > 0 ? titleRaw.slice(dash+3) : (i.source?.name || 'Google News'),
+          flag:    '📰',
+        };
+      }).filter(i => i.title && i.link);
+    },
+    async () => {
+      const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`, {signal: AbortSignal.timeout(10000)});
+      const d = await r.json();
+      return parseRSSXML(d.contents || '').map(i => ({...i, source: i.source||'Google News', flag:'📰'}));
+    },
+    async () => {
+      const r = await fetch(`https://corsproxy.io/?${encodeURIComponent(rssUrl)}`, {signal: AbortSignal.timeout(10000)});
+      return parseRSSXML(await r.text()).map(i => ({...i, source: i.source||'Google News', flag:'📰'}));
+    },
+  ];
+
+  for (const fn of proxies) {
+    try {
+      const result = await fn();
+      if (result && result.length > 0) { items = result; break; }
+    } catch(e) { continue; }
+  }
+
+  if (!items || !items.length) {
+    body.innerHTML = `<div class="col-empty"><div class="col-empty-icon">🔍</div><div class="col-empty-txt">「${esc(kw)}」の記事が見つかりません<br><span style="font-size:10px;color:var(--text-dim)">📰ボタンでGoogle Newsを検索できます</span></div>`;
+    if (countEl) countEl.textContent = '0 件';
+    return;
+  }
+
+  items.sort((a,b) => new Date(b.pubDate||0) - new Date(a.pubDate||0));
+  gnewsCache[cacheKey] = items;
+  renderArticleCards(body, items, idx, kw);
+  if (countEl) countEl.textContent = items.length + ' 件';
+  document.getElementById('ftTxt').innerHTML = `<span class="live-dot"></span>最終更新 <span style="color:var(--accent2)">${new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})}</span>`;
 }
 
 

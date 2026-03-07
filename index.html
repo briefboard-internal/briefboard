@@ -235,7 +235,6 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
         <button class="lang-btn" id="langJa" onclick="setLang('ja')">日本語</button>
         <button class="lang-btn" id="langEn" onclick="setLang('en')">English</button>
       </div>
-      <button class="btn-refresh" id="refreshBtn" onclick="loadAll()">↻ 更新</button>
     </div>
   </div>
 </header>
@@ -775,7 +774,7 @@ function renderArticleCards(body, articles, idx, kw) {
 // ══════════════════════════════════════════════
 //  LANGUAGE TOGGLE
 // ══════════════════════════════════════════════
-let translateCache = {};  // link -> ja/en translated title
+// translateCache は STATE セクションで宣言済み
 
 function setLang(lang) {
   currentLang = lang;

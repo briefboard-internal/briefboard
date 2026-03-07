@@ -149,7 +149,7 @@ header{border-bottom:1px solid var(--border);padding:12px 0;position:sticky;top:
 .columns-grid{
   display:flex;
   flex-direction:row;
-  gap:16px;
+  gap:12px;
   padding:4px 0 12px;
   -webkit-overflow-scrolling:touch;
   align-items:start;
@@ -285,11 +285,18 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
 .archive-toggle:hover{color:var(--accent);border-color:var(--accent);}
 .archive-body{display:none;}
 .archive-body.open{display:block;}
+/* PCは常に表示 */
+@media(min-width:769px){.archive-body{display:block!important;}}
 /* カード内過去検索ボタン */
 
 
 
 
+
+/* スマホのみ表示のGoogleニュース検索トグル */
+.archive-toggle-sp{display:none;background:none;border:none;color:var(--text-muted);font-size:11px;cursor:pointer;padding:2px 6px;transition:color 0.2s;}
+.archive-toggle-sp:hover{color:var(--accent);}
+@media(max-width:768px){.archive-toggle-sp{display:block;}}
 </style>
 </head>
 <body>
@@ -337,8 +344,11 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
 
     <!-- 過去記事・動向検索 -->
     <div class="panel archive-panel-inline">
-      <div class="panel-lbl">🔍 Googleニュース検索</div>
-      <div class="archive-body open" id="archiveBody">
+      <div class="panel-lbl" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>🔍 Googleニュース検索</span>
+        <button class="archive-toggle-sp" id="archToggleSp" onclick="toggleArchiveSp()">▲</button>
+      </div>
+      <div class="archive-body" id="archiveBody">
         <p class="archive-desc">Google News・Bloomberg・Reuters等の過去記事を横断検索。</p>
         <div class="archive-row">
           <input class="archive-input" id="archInput" placeholder="キーワード..." onkeydown="if(event.key==='Enter')runArchive()">
@@ -385,43 +395,113 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
 //  ALIAS MAP
 // ══════════════════════════════════════════════
 const ALIASES = {
-  // 日本メーカー
-  'トヨタ':['toyota','トヨタ'],'toyota':['toyota','トヨタ'],
-  'ホンダ':['honda','ホンダ'],'honda':['honda','ホンダ'],
-  '日産':['nissan','日産'],'nissan':['nissan','日産'],
-  'スバル':['subaru','スバル'],'subaru':['subaru','スバル'],
+  // ── 日本メーカー・グループ ──
+  'トヨタ':['toyota','トヨタ','豊田'],'toyota':['toyota','トヨタ','豊田'],
+  'ホンダ':['honda','ホンダ','本田'],'honda':['honda','ホンダ','本田'],
+  '日産':['nissan','日産','ニッサン'],'nissan':['nissan','日産'],
+  'スバル':['subaru','スバル','富士重工'],'subaru':['subaru','スバル'],
   'マツダ':['mazda','マツダ'],'mazda':['mazda','マツダ'],
-  '三菱':['mitsubishi','三菱'],'mitsubishi':['mitsubishi','三菱'],
+  '三菱自動車':['mitsubishi motors','三菱自動車','三菱'],'mitsubishi':['mitsubishi','三菱'],
   'スズキ':['suzuki','スズキ'],'suzuki':['suzuki','スズキ'],
   'ダイハツ':['daihatsu','ダイハツ'],'daihatsu':['daihatsu','ダイハツ'],
   'レクサス':['lexus','レクサス'],'lexus':['lexus','レクサス'],
-  // 海外メーカー
+  'トヨタグループ':['toyota group','トヨタグループ','デンソー OR アイシン OR トヨタ'],'denso':['denso','デンソー'],
+  'デンソー':['denso','デンソー'],
+  'アイシン':['aisin','アイシン'],
+  'ジェイテクト':['jtekt','ジェイテクト'],
+  '豊田自動織機':['toyota industries','豊田自動織機'],
+  // ── 海外完成車メーカー ──
   'テスラ':['tesla','テスラ'],'tesla':['tesla','テスラ'],
-  'byd':['byd','比亜迪'],'ビーワイディー':['byd','比亜迪','ビーワイディー'],
+  'byd':['byd','比亜迪','ビーワイディー'],'ビーワイディー':['byd','比亜迪','ビーワイディー'],
   'フォルクスワーゲン':['volkswagen','vw','フォルクスワーゲン'],'vw':['volkswagen','vw'],
+  'アウディ':['audi','アウディ'],'audi':['audi','アウディ'],
+  'ポルシェ':['porsche','ポルシェ'],'porsche':['porsche','ポルシェ'],
   'フォード':['ford','フォード'],'ford':['ford','フォード'],
-  'ゼネラルモーターズ':['general motors','gm','ゼネラルモーターズ'],'gm':['general motors','gm'],
+  'gm':['general motors','gm','ゼネラルモーターズ'],'ゼネラルモーターズ':['general motors','gm','ゼネラルモーターズ'],
   'ステランティス':['stellantis','ステランティス'],'stellantis':['stellantis','ステランティス'],
-  'ヒュンダイ':['hyundai','ヒュンダイ','現代'],'hyundai':['hyundai','ヒュンダイ'],
-  'bmw':['bmw'],'メルセデス':['mercedes','メルセデス'],'mercedes':['mercedes','メルセデス'],
+  'ヒュンダイ':['hyundai','ヒュンダイ','현대'],'hyundai':['hyundai','ヒュンダイ'],
+  'キア':['kia','キア'],'kia':['kia','キア'],
+  'bmw':['bmw','ビーエムダブリュー'],
+  'メルセデス':['mercedes','メルセデス','mercedes-benz'],'mercedes':['mercedes','メルセデス','mercedes-benz'],
+  'ベンツ':['mercedes-benz','ベンツ','メルセデス'],
   'ボルボ':['volvo','ボルボ'],'volvo':['volvo','ボルボ'],
   'リビアン':['rivian','リビアン'],'rivian':['rivian','リビアン'],
-  // EV・電動化
-  'ev':['ev','electric vehicle','electric car','bev','電気自動車','電動車'],'電気自動車':['ev','electric vehicle','electric car','bev','電気自動車'],
-  'phev':['phev','plug-in hybrid','プラグインハイブリッド'],'プラグイン':['phev','plug-in','プラグイン'],
-  '電動化':['electrif','電動化','ev','electric'],'自動運転':['autonomous','self-driving','自動運転'],
-  // 電池・バッテリー
+  'ルシード':['lucid','ルシード'],'lucid':['lucid','ルシード'],
+  'nio':['nio','蔚来','ニオ'],'ニオ':['nio','蔚来'],
+  'xpeng':['xpeng','小鵬','シャオペン'],'小鵬':['xpeng','小鵬'],
+  'li auto':['li auto','理想汽車'],'理想':['li auto','理想汽車'],
+  'ルノー':['renault','ルノー'],'renault':['renault','ルノー'],
+  'プジョー':['peugeot','プジョー'],'peugeot':['peugeot','プジョー'],
+  'フィアット':['fiat','フィアット'],'fiat':['fiat','フィアット'],
+  'シボレー':['chevrolet','シボレー'],'chevrolet':['chevrolet','シボレー'],
+  'キャデラック':['cadillac','キャデラック'],'cadillac':['cadillac','キャデラック'],
+  'ジープ':['jeep','ジープ'],'jeep':['jeep','ジープ'],
+  'ランドローバー':['land rover','ランドローバー'],'land rover':['land rover','ランドローバー'],
+  'ジャガー':['jaguar','ジャガー'],'jaguar':['jaguar','ジャガー'],
+  'タタ':['tata motors','タタ'],'tata':['tata','タタ'],
+  // ── 電池メーカー ──
+  'catl':['catl','寧德時代','CATL'],'寧德時代':['catl','寧德時代'],
+  'パナソニック':['panasonic','パナソニック'],'panasonic':['panasonic','パナソニック'],
+  'lgエネルギー':['lg energy','lg化学','LG Energy Solution','lgエネルギー'],'lg energy':['lg energy','LG Energy Solution'],
+  'サムスンsdi':['samsung sdi','サムスンSDI'],'samsung sdi':['samsung sdi','サムスンSDI'],
+  'skオン':['sk on','SK Innovation','skオン'],'sk on':['sk on','SK Innovation'],
+  'プライムプラネット':['prime planet','プライムプラネット','PPES'],
+  'AESC':['aesc','AESC','エンビジョンAESC'],'エンビジョン':['envision','エンビジョン'],
+  // ── EV・電動化技術 ──
+  'ev':['ev','electric vehicle','electric car','bev','電気自動車','電動車','EV'],'電気自動車':['ev','electric vehicle','electric car','bev','電気自動車'],
+  'bev':['bev','battery electric','純電気','電気自動車'],'phev':['phev','plug-in hybrid','プラグインハイブリッド'],
+  'hev':['hev','hybrid','ハイブリッド','HEV'],'ハイブリッド':['hybrid','ハイブリッド','hev'],
+  'fcev':['fcev','fuel cell','燃料電池車','水素自動車'],'燃料電池':['fuel cell','燃料電池','fcev'],
+  '電動化':['electrif','電動化','ev','electric','xEV'],
+  'ソフトウェア定義車両':['software defined vehicle','sdv','ソフトウェア定義','SDV'],
+  'sdv':['sdv','software defined vehicle','SDV'],
+  // ── バッテリー・電池技術 ──
   'バッテリー':['battery','バッテリー','電池'],'battery':['battery','バッテリー','電池'],
-  '電池':['battery','電池','バッテリー','cell'],'リチウム':['lithium','リチウム'],
-  '全固体電池':['solid.state','all-solid','全固体','solid state battery'],
-  'catl':['catl','寧德時代'],'パナソニック':['panasonic','パナソニック'],'panasonic':['panasonic','パナソニック'],
-  // 充電・インフラ
-  '充電':['charg','充電','supercharger'],'charg':['charg','充電'],
-  // エネルギー・環境
-  '再エネ':['renewable','solar','wind','再エネ','再生可能'],'脱炭素':['carbon','decarboni','脱炭素','カーボンニュートラル'],
-  // 一般
+  '電池':['battery','電池','バッテリー','cell'],
+  'リチウムイオン':['lithium ion','lithium-ion','リチウムイオン','LIB'],'lithium':['lithium','リチウム'],
+  '全固体電池':['solid state battery','all-solid-state','全固体電池','solid-state'],'solid state':['solid state battery','全固体電池'],
+  'ナトリウムイオン':['sodium ion','sodium-ion','ナトリウムイオン電池'],'sodium':['sodium','ナトリウム'],
+  'リン酸鉄':['LFP','lithium iron phosphate','リン酸鉄リチウム','lfp'],'lfp':['lfp','LFP','lithium iron phosphate','リン酸鉄'],
+  'nmc':['nmc','NCM','ニッケルマンガンコバルト','三元系'],'三元系':['nmc','NCM','三元系'],
+  'アノード':['anode','アノード','負極'],'カソード':['cathode','カソード','正極'],
+  '電解質':['electrolyte','電解質'],'セパレーター':['separator','セパレーター'],
+  'ギガファクトリー':['gigafactory','ギガファクトリー','giga factory'],'gigafactory':['gigafactory','ギガファクトリー'],
+  'セル':['battery cell','セル','電池セル'],'パック':['battery pack','バッテリーパック','パック'],
+  'エネルギー密度':['energy density','エネルギー密度','Wh/kg'],
+  // ── 充電・インフラ ──
+  '充電':['charg','充電','EV充電'],'充電インフラ':['charging infrastructure','充電インフラ','充電ネットワーク'],
+  'スーパーチャージャー':['supercharger','スーパーチャージャー'],'急速充電':['fast charg','急速充電','DC充電','CHAdeMO'],
+  'chademo':['chademo','CHAdeMO','チャデモ'],
+  'v2g':['v2g','vehicle to grid','V2G'],'v2h':['v2h','vehicle to home','V2H'],
+  // ── 自動運転・ADAS ──
+  '自動運転':['autonomous','self-driving','自動運転','automated driving'],
+  'adas':['adas','ADAS','先進運転支援'],'レベル4':['level 4','level4','レベル4'],
+  'ライダー':['lidar','ライダー','LiDAR'],'lidar':['lidar','LiDAR','ライダー'],
+  'カメラ認識':['computer vision','camera','カメラ認識','画像認識'],
+  'ロボタクシー':['robotaxi','robo-taxi','ロボタクシー'],'waymo':['waymo','ウェイモ'],
+  'モービルアイ':['mobileye','モービルアイ'],'mobileye':['mobileye','モービルアイ'],
+  // ── 素材・資源 ──
+  'コバルト':['cobalt','コバルト'],'ニッケル':['nickel','ニッケル'],
+  'マンガン':['manganese','マンガン'],'リチウム資源':['lithium mining','リチウム資源','lithium supply'],
+  'レアメタル':['rare metal','レアメタル','希少金属'],'レアアース':['rare earth','レアアース'],
+  'アルミ':['aluminum','aluminium','アルミ','アルミニウム'],
+  '銅':['copper','銅'],'鉄鋼':['steel','鉄鋼','スチール'],
+  // ── 環境・規制 ──
+  '脱炭素':['carbon','decarboni','脱炭素','カーボンニュートラル'],'カーボンニュートラル':['carbon neutral','カーボンニュートラル','net zero'],
+  'co2':['co2','CO2','carbon dioxide','排出'],'排出規制':['emission regulation','排出規制','emissions standard'],
+  'ユーロ7':['euro 7','euro7','ユーロ7'],'cafe':['cafe standard','CAFE','fuel economy standard'],
+  'ies':['IES','ice ban','内燃機関禁止','エンジン禁止'],
+  // ── エネルギー ──
+  '再エネ':['renewable','solar','wind','再エネ','再生可能'],'太陽光':['solar','太陽光','photovoltaic'],
+  '風力':['wind power','wind energy','風力'],'蓄電池':['energy storage','蓄電池','ESS'],
+  '電力':['electricity','電力','power grid'],'系統':['grid','電力系統','系統'],
+  // ── 市場・ビジネス ──
   '半導体':['semiconductor','chip','半導体'],'サプライチェーン':['supply chain','サプライチェーン'],
+  'リコール':['recall','リコール'],'補助金':['subsidy','補助金','incentive'],
+  'インフレ抑制法':['inflation reduction act','IRA','インフレ抑制法'],'ira':['IRA','inflation reduction act'],
+  '関税':['tariff','関税'],'貿易':['trade','貿易'],
   'ai':['ai','人工知能','artificial intelligence'],'自動車':['automotive','automobile','自動車','car','vehicle'],
+  '中国ev':['china ev','中国EV','Chinese EV','中国電気自動車'],
 };
 function getAliases(kw) {
   return ALIASES[kw] || ALIASES[kw.toLowerCase()] || [kw];
@@ -988,6 +1068,15 @@ function toggleSidebar(){
 
 
 
+
+
+function toggleArchiveSp(){
+  var body = document.getElementById('archiveBody');
+  var btn  = document.getElementById('archToggleSp');
+  if(!body || !btn) return;
+  body.classList.toggle('open');
+  btn.textContent = body.classList.contains('open') ? '▲' : '▼';
+}
 
 </script>
 </body>

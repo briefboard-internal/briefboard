@@ -1004,7 +1004,10 @@ init();
     const maxLeft = wrap.clientWidth - thumbW;
     const newLeft = Math.min(Math.max(0, startLeft + e.clientX - startX), maxLeft);
     const scrollable = grid.scrollWidth - grid.clientWidth;
-    grid.scrollLeft = (newLeft / maxLeft) * scrollable;
+    // thumbを直接動かす
+    thumb.style.left = newLeft + 'px';
+    // gridを連動させる
+    if(scrollable > 0) grid.scrollLeft = (newLeft / maxLeft) * scrollable;
   });
   document.addEventListener('mouseup', ()=>{
     dragging=false;

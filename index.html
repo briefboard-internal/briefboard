@@ -664,6 +664,7 @@ async function fetchByKeyword(kw, idx) {
   renderArticleCards(body, items, idx, kw);
   if (countEl) countEl.textContent = items.length + ' 件';
   document.getElementById('ftTxt').innerHTML = `<span class="live-dot"></span>最終更新 <span style="color:var(--accent2)">${new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})}</span>`;
+  if (window.syncScrollbarWidth) window.syncScrollbarWidth();
 }
 
 
@@ -926,16 +927,22 @@ init();
   const bar   = document.getElementById('colsScrollbar');
   const inner = document.getElementById('colsScrollbarInner');
 
-  function syncWidth(){
-    inner.style.width = grid.scrollWidth + 'px';
-  }
+  // グローバルに公開（fetchByKeyword完了時にも呼べるように）
+  window.syncScrollbarWidth = function(){
+    // カードが描画されてから少し待って正確なscrollWidthを取得
+    requestAnimationFrame(() => {
+      inner.style.width = grid.scrollWidth + 'px';
+    });
+  };
+
   // grid → bar
   grid.addEventListener('scroll', () => { bar.scrollLeft = grid.scrollLeft; });
   // bar → grid
   bar.addEventListener('scroll', () => { grid.scrollLeft = bar.scrollLeft; });
 
-  new ResizeObserver(syncWidth).observe(grid);
-  syncWidth();
+  // DOM変化を監視（カード追加・削除時に自動反応）
+  new MutationObserver(window.syncScrollbarWidth).observe(grid, {childList:true, subtree:true});
+  window.syncScrollbarWidth();
 })();
 
 

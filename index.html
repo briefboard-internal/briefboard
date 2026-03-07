@@ -82,9 +82,11 @@ header{border-bottom:1px solid var(--border);padding:12px 0;position:sticky;top:
 .chip-dot{width:4px;height:4px;border-radius:50%;background:var(--text-dim);flex-shrink:0;transition:background 0.15s;}
 
 /* ── COLUMNS AREA ── */
-.cols-wrap{padding:14px 12px 40px;position:relative;z-index:1;}
-@media(max-width:600px){.cols-wrap{padding:10px 8px 40px;}}
-.cols-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.cols-wrap{padding:14px 28px 40px;position:relative;z-index:1;}
+@media(max-width:600px){.cols-wrap{padding:10px 18px 40px;}}
+.cols-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.cols-sticky{position:sticky;top:57px;background:var(--bg);z-index:100;padding:10px 28px 0;margin:0 -28px;border-bottom:1px solid var(--border);padding-bottom:10px;}
+@media(max-width:600px){.cols-sticky{top:50px;padding:8px 18px 0;margin:0 -18px;padding-bottom:8px;}}
 .cols-title{font-family:var(--serif);font-size:18px;font-weight:700;letter-spacing:-0.5px;}
 .cols-info{font-family:var(--mono);font-size:10px;color:var(--text-muted);}
 
@@ -98,20 +100,14 @@ header{border-bottom:1px solid var(--border);padding:12px 0;position:sticky;top:
   -webkit-overflow-scrolling:touch;
   scroll-snap-type:x proximity;
   align-items:start;
+  scrollbar-width:none;
+  -ms-overflow-style:none;
 }
+.columns-grid::-webkit-scrollbar{display:none;}
 /* スクロールバーをPCでも目立つように */
-/* columns-grid 自体のスクロールバーは非表示（上部mirrorで代替） */
-.columns-grid::-webkit-scrollbar{height:0;display:none;}
-.columns-grid{scrollbar-width:none;-ms-overflow-style:none;}
+
 /* 上部ミラースクロールバー */
-.scroll-mirror-wrap{overflow-x:scroll;overflow-y:hidden;height:16px;margin-bottom:10px;cursor:ew-resize;}
-.scroll-mirror-wrap::-webkit-scrollbar{height:10px;}
-.scroll-mirror-wrap::-webkit-scrollbar-track{background:var(--surface2);border-radius:5px;}
-.scroll-mirror-wrap::-webkit-scrollbar-thumb{background:var(--border2);border-radius:5px;min-width:40px;}
-.scroll-mirror-wrap::-webkit-scrollbar-thumb:hover{background:var(--accent2);}
-.scroll-mirror{height:1px;}
-/* スマホでは非表示 */
-@media(max-width:600px){.scroll-mirror-wrap{display:none;}}
+
 @media(max-width:600px){
   .columns-grid{gap:10px;padding-bottom:12px;}
 }
@@ -228,6 +224,37 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
 .archive-body{display:none;}
 .archive-body.open{display:block;}
 /* カード内過去検索ボタン */
+
+/* ── 左右ナビゲーションボタン ── */
+.cols-nav-wrap{position:relative;}
+.nav-btn{
+  position:absolute;
+  top:50%;
+  transform:translateY(-50%);
+  z-index:50;
+  width:44px;height:44px;
+  border-radius:50%;
+  border:none;
+  background:rgba(20,20,30,0.75);
+  backdrop-filter:blur(8px);
+  color:var(--text);
+  font-size:18px;
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all 0.2s;
+  box-shadow:0 2px 12px rgba(0,0,0,0.5);
+  -webkit-tap-highlight-color:transparent;
+}
+.nav-btn:hover{background:rgba(226,201,126,0.25);color:var(--accent);transform:translateY(-50%) scale(1.08);}
+.nav-btn:active{transform:translateY(-50%) scale(0.96);}
+.nav-btn.nav-left{left:-16px;}
+.nav-btn.nav-right{right:-16px;}
+.nav-btn:disabled{opacity:0.15;pointer-events:none;}
+@media(max-width:600px){
+  .nav-btn{width:36px;height:36px;font-size:15px;}
+  .nav-btn.nav-left{left:-10px;}
+  .nav-btn.nav-right{right:-10px;}
+}
 </style>
 </head>
 <body>
@@ -253,8 +280,7 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
     <div class="panel">
       <div class="panel-lbl" style="display:flex;align-items:center;justify-content:space-between;">
         <span>▸ 監視キーワード</span>
-        <span style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:0;text-transform:none;font-weight:normal;">スペース（␣）
-区切り＝AND　スラッシュ（／）区切り＝OR</span>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:0;text-transform:none;font-weight:normal;">スペース（␣）区切り＝AND　スラッシュ（／）区切り＝OR</span>
       </div>
       <div class="kw-row">
         <input class="kw-input" id="kwInput" placeholder="例: トヨタ、EV、半導体..." onkeydown="if(event.key==='Enter')addKw()">
@@ -296,15 +322,18 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
 
 <div class="cols-wrap">
   <div class="err-banner" id="errBanner"></div>
-  <div class="cols-meta">
-    <div class="cols-title">ニュース</div>
-    <div class="cols-info" id="colsInfo"></div>
+  <div class="cols-sticky">
+    <div class="cols-meta">
+      <div class="cols-title">ニュース</div>
+      <div class="cols-info" id="colsInfo"></div>
+    </div>
+    <div class="swipe-hint" id="swipeHint">← 横にスクロールで全列表示 →</div>
   </div>
-  <div class="swipe-hint" id="swipeHint">← 横にスクロールで全列表示 →</div>
-  <div class="scroll-mirror-wrap" id="scrollMirrorWrap">
-    <div class="scroll-mirror" id="scrollMirror"><div id="scrollMirrorInner"></div></div>
+  <div class="cols-nav-wrap">
+    <button class="nav-btn nav-left" id="navLeft" onclick="scrollCols(-1)" aria-label="左へスクロール">&#9664;</button>
+    <div class="columns-grid" id="colsGrid"></div>
+    <button class="nav-btn nav-right" id="navRight" onclick="scrollCols(1)" aria-label="右へスクロール">&#9654;</button>
   </div>
-  <div class="columns-grid" id="colsGrid"></div>
 </div>
 
 <footer>
@@ -903,30 +932,36 @@ function relTime(d){
 
 init();
 
-// ── 上部ミラースクロールバー同期 ──
-(function() {
+// ── 左右ナビゲーション ──
+function scrollCols(dir) {
   const grid = document.getElementById('colsGrid');
-  const mirror = document.getElementById('scrollMirrorWrap');
-  const inner = document.getElementById('scrollMirrorInner');
+  const step = 320; // 1回のスクロール量（列幅相当）
+  grid.scrollBy({left: dir * step, behavior: 'smooth'});
+  // 少し待ってからボタン状態を更新
+  setTimeout(updateNavBtns, 350);
+}
 
-  function syncMirrorWidth() {
-    inner.style.width = grid.scrollWidth + 'px';
-  }
+function updateNavBtns() {
+  const grid = document.getElementById('colsGrid');
+  const btnL = document.getElementById('navLeft');
+  const btnR = document.getElementById('navRight');
+  if (!grid || !btnL || !btnR) return;
+  const atLeft  = grid.scrollLeft <= 4;
+  const atRight = grid.scrollLeft + grid.clientWidth >= grid.scrollWidth - 4;
+  btnL.disabled = atLeft;
+  btnR.disabled = atRight;
+}
 
-  // grid → mirror
-  grid.addEventListener('scroll', () => {
-    mirror.scrollLeft = grid.scrollLeft;
-  });
-  // mirror → grid
-  mirror.addEventListener('scroll', () => {
-    grid.scrollLeft = mirror.scrollLeft;
-  });
+// スクロール中もボタン状態を更新
+document.getElementById('colsGrid').addEventListener('scroll', updateNavBtns);
+// 初期状態
+updateNavBtns();
+// 列追加/削除時も更新
+const _origRenderColumns = renderColumns;
+// renderColumns後に updateNavBtns を呼ぶよう ResizeObserver で監視
+new ResizeObserver(() => { updateNavBtns(); }).observe(document.getElementById('colsGrid'));
 
-  // 幅の変化を監視（列追加/削除時）
-  const ro = new ResizeObserver(syncMirrorWidth);
-  ro.observe(grid);
-  syncMirrorWidth();
-})();
+
 </script>
 </body>
 </html>

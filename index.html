@@ -41,14 +41,54 @@ header{border-bottom:1px solid var(--border);padding:12px 0;position:sticky;top:
 .lang-btn.on{background:var(--accent);color:var(--bg);font-weight:500;}
 .lang-btn:not(.on):hover{color:var(--text);}
 
-/* ── PANELS ── */
-.ctrl-wrap{padding:12px 12px 0;position:relative;z-index:1;}
-.ctrl-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-@media(max-width:768px){.ctrl-grid{grid-template-columns:1fr;gap:8px;}}
-.panel{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:14px 16px;min-width:0;width:100%;}
-@media(max-width:600px){
-  .ctrl-wrap{padding:8px 8px 0;}
-  .panel{padding:10px 12px;}
+/* ── 2カラムレイアウト ── */
+.app-layout{display:flex;flex-direction:row;align-items:stretch;min-height:calc(100vh - 57px);position:relative;z-index:1;}
+
+/* サイドバー */
+.sidebar{
+  width:260px;min-width:260px;flex-shrink:0;
+  display:flex;flex-direction:column;
+  border-right:1px solid var(--border);
+  position:sticky;top:57px;
+  height:calc(100vh - 57px);
+  overflow:hidden;
+  transition:width 0.25s, min-width 0.25s;
+  background:var(--bg);
+  z-index:50;
+}
+.sidebar.collapsed{width:44px;min-width:44px;}
+.sidebar-header{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 12px;border-bottom:1px solid var(--border);
+  cursor:pointer;flex-shrink:0;
+  user-select:none;
+}
+.sidebar-header:hover .hamburger span{background:var(--accent);}
+.hamburger{display:flex;flex-direction:column;gap:4px;width:20px;flex-shrink:0;}
+.hamburger span{display:block;height:2px;background:var(--text-muted);border-radius:1px;transition:background 0.2s;}
+.sidebar-label{font-family:var(--mono);font-size:10px;color:var(--text-muted);letter-spacing:1px;white-space:nowrap;overflow:hidden;transition:opacity 0.2s;}
+.sidebar.collapsed .sidebar-label{opacity:0;}
+.sidebar-content{
+  flex:1;overflow-y:auto;overflow-x:hidden;
+  padding:10px;display:flex;flex-direction:column;gap:10px;
+  scrollbar-width:none;
+}
+.sidebar-content::-webkit-scrollbar{display:none;}
+.sidebar.collapsed .sidebar-content{opacity:0;pointer-events:none;}
+
+/* メインコンテンツ */
+.main-content{flex:1;min-width:0;display:flex;flex-direction:column;}
+
+/* PANELS */
+.ctrl-wrap{display:none;} /* 旧レイアウト非表示 */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px 14px;min-width:0;width:100%;}
+
+@media(max-width:768px){
+  .app-layout{flex-direction:column;}
+  .sidebar{position:static;width:100%!important;min-width:100%!important;height:auto;border-right:none;border-bottom:1px solid var(--border);}
+  .sidebar.collapsed{height:44px;}
+  .sidebar.collapsed .sidebar-content{display:none;}
+  .sidebar-content{padding:8px;}
 }
 .panel-lbl{font-family:var(--mono);font-size:10px;color:var(--text-muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;}
 
@@ -82,7 +122,7 @@ header{border-bottom:1px solid var(--border);padding:12px 0;position:sticky;top:
 .chip-dot{width:4px;height:4px;border-radius:50%;background:var(--text-dim);flex-shrink:0;transition:background 0.15s;}
 
 /* ── COLUMNS AREA ── */
-.cols-wrap{padding:14px 12px 40px;position:relative;z-index:1;}
+.cols-wrap{padding:14px 12px 40px;flex:1;}
 @media(max-width:600px){.cols-wrap{padding:10px 8px 40px;}}
 .cols-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
 .cols-sticky{position:sticky;top:57px;background:var(--bg);z-index:100;padding:10px 12px 0;margin:0 -12px;border-bottom:1px solid var(--border);padding-bottom:10px;}
@@ -252,34 +292,18 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
 
 /* ── カスタム横スライダー ── */
 .cols-slider-wrap{
-  position:relative;
-  height:14px;
-  background:var(--surface2);
-  border-radius:7px;
-  margin-bottom:10px;
-  cursor:pointer;
-}
-.cols-slider-track{
-  position:absolute;
-  inset:0;
-  border-radius:7px;
+  height:16px;background:var(--surface2);border-radius:8px;
+  margin-bottom:12px;cursor:pointer;position:relative;
+  touch-action:none;
 }
 .cols-slider-thumb{
-  position:absolute;
-  top:50%;
-  transform:translateY(-50%);
-  height:10px;
-  min-width:40px;
-  background:var(--border2);
-  border-radius:5px;
-  cursor:grab;
+  position:absolute;top:3px;height:10px;
+  min-width:40px;background:var(--border2);border-radius:5px;
+  cursor:grab;user-select:none;touch-action:none;
   transition:background 0.15s;
-  user-select:none;
 }
-.cols-slider-thumb:hover,.cols-slider-thumb.dragging{
-  background:var(--accent2);
-  cursor:grabbing;
-}
+.cols-slider-thumb:hover{background:var(--accent2);}
+.cols-slider-thumb.active{background:var(--accent2);cursor:grabbing;}
 @media(max-width:600px){.cols-slider-wrap{display:none;}}
 </style>
 </head>
@@ -301,51 +325,63 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
   </div>
 </header>
 
-<div class="ctrl-wrap">
-  <div class="ctrl-grid">
+<div class="app-layout">
+
+<!-- ═══ サイドバー ═══ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header" onclick="toggleSidebar()">
+    <div class="hamburger"><span></span><span></span><span></span></div>
+    <span class="sidebar-label">メニュー</span>
+  </div>
+  <div class="sidebar-content">
+
+    <!-- 監視キーワード -->
     <div class="panel">
-      <div class="panel-lbl" style="display:flex;align-items:center;justify-content:space-between;">
-        <span>▸ 監視キーワード</span>
-        <span style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:0;text-transform:none;font-weight:normal;">スペース（␣）区切り＝AND　スラッシュ（／）区切り＝OR</span>
+      <div class="panel-lbl" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;">
+        <span>監視キーワード</span>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:0;text-transform:none;font-weight:normal;">（␣）＝AND　（／）＝OR</span>
       </div>
       <div class="kw-row">
-        <input class="kw-input" id="kwInput" placeholder="例: トヨタ、EV、半導体..." onkeydown="if(event.key==='Enter')addKw()">
-        <button class="btn-add" onclick="addKw()">+ 追加</button>
+        <input class="kw-input" id="kwInput" placeholder="例: トヨタ, EV..." onkeydown="if(event.key==='Enter')addKw()">
+        <button class="btn-add" onclick="addKw()">+</button>
       </div>
       <div class="tags" id="tagArea">
-        <span class="no-tags">追加したキーワードが1列ずつ並びます</span>
+        <span class="no-tags">キーワードを追加</span>
       </div>
     </div>
 
+    <!-- 過去記事・動向検索 -->
     <div class="panel archive-panel-inline">
       <div class="archive-panel-head">
-        <span class="archive-panel-title">📚 過去記事・動向検索</span>
+        <span class="archive-panel-title">📚 過去記事検索</span>
         <button class="archive-toggle" onclick="toggleArchive()">▸ 開く</button>
       </div>
       <div class="archive-body" id="archiveBody">
-        <p class="archive-desc">キーワードを入力して、Google News・Electrek・Bloomberg・Reutersなど各サービスの過去記事を横断検索します。期間も指定できます。</p>
+        <p class="archive-desc">Google News・Bloomberg・Reuters等の過去記事を横断検索。</p>
         <div class="archive-row">
-          <input class="archive-input" id="archInput" placeholder="例: Tesla battery, トヨタ EV..." onkeydown="if(event.key==='Enter')runArchive()">
+          <input class="archive-input" id="archInput" placeholder="キーワード..." onkeydown="if(event.key==='Enter')runArchive()">
           <select class="archive-period" id="archPeriod">
-            <option value="">期間指定なし</option>
-            <option value="w">直近1週間</option>
-            <option value="m">直近1ヶ月</option>
-            <option value="y">直近1年</option>
-            <option value="y3">直近3年</option>
-            <option value="y5">直近5年</option>
+            <option value="">期間なし</option>
+            <option value="w">1週間</option>
+            <option value="m">1ヶ月</option>
+            <option value="y">1年</option>
+            <option value="y3">3年</option>
+            <option value="y5">5年</option>
           </select>
         </div>
         <div class="archive-sites" id="archSites"></div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <button class="archive-go" onclick="runArchive()">🔍 まとめて検索</button>
-          <span style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">選択したサービスが別タブで開きます</span>
+          <button class="archive-go" onclick="runArchive()">🔍 検索</button>
+          <span style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">別タブで開きます</span>
         </div>
       </div>
     </div>
 
   </div>
-</div>
+</aside>
 
+<!-- ═══ メインコンテンツ ═══ -->
+<div class="main-content">
 <div class="cols-wrap">
   <div class="err-banner" id="errBanner"></div>
   <div class="cols-sticky">
@@ -361,6 +397,8 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
   </div>
   <div class="columns-grid" id="colsGrid"></div>
 </div>
+</div><!-- main-content -->
+</div><!-- app-layout -->
 
 <footer>
   <div class="ft">
@@ -967,85 +1005,82 @@ init();
 
 
 
-// ── カスタム横スライダー ──
+
+
+// ── カスタム横スライダー（pointerEvents版）──
 (function(){
-  const grid  = document.getElementById('colsGrid');
   const wrap  = document.getElementById('colsSliderWrap');
   const thumb = document.getElementById('colsSliderThumb');
-  if(!grid||!wrap||!thumb) return;
+  const grid  = document.getElementById('colsGrid');
+  if(!wrap||!thumb||!grid) return;
 
-  function update(){
-    const scrollable = grid.scrollWidth - grid.clientWidth;
-    if(scrollable <= 0){ wrap.style.display='none'; return; }
+  // サムの幅・位置をgridの状態から計算して更新
+  function updateThumb(){
+    const sw = grid.scrollWidth, cw = grid.clientWidth, sl = grid.scrollLeft;
+    if(sw <= cw){ wrap.style.display='none'; return; }
     wrap.style.display='block';
-    const ratio = grid.clientWidth / grid.scrollWidth;
-    const thumbW = Math.max(40, wrap.clientWidth * ratio);
-    thumb.style.width = thumbW + 'px';
-    const maxLeft = wrap.clientWidth - thumbW;
-    const left = (grid.scrollLeft / scrollable) * maxLeft;
-    thumb.style.left = Math.min(left, maxLeft) + 'px';
+    const ww = wrap.clientWidth;
+    const ratio = cw / sw;
+    const tw = Math.max(40, ww * ratio);
+    const maxLeft = ww - tw;
+    const left = (sl / (sw - cw)) * maxLeft;
+    thumb.style.width = tw + 'px';
+    thumb.style.left  = Math.min(left, maxLeft) + 'px';
   }
 
-  // gridスクロール → thumb移動
-  grid.addEventListener('scroll', update);
+  // gridスクロール → サム位置更新
+  grid.addEventListener('scroll', updateThumb, {passive:true});
 
-  // thumb ドラッグ → gridスクロール
-  let dragging=false, startX=0, startLeft=0;
-  thumb.addEventListener('mousedown', e=>{
-    dragging=true;
-    startX=e.clientX;
-    startLeft=parseFloat(thumb.style.left)||0;
-    thumb.classList.add('dragging');
+  // ── ドラッグ ──
+  let active = false, startX = 0, startLeft = 0;
+
+  thumb.addEventListener('pointerdown', e=>{
+    active = true;
+    startX = e.clientX;
+    startLeft = parseFloat(thumb.style.left) || 0;
+    thumb.setPointerCapture(e.pointerId);
+    thumb.classList.add('active');
     e.preventDefault();
   });
-  document.addEventListener('mousemove', e=>{
-    if(!dragging) return;
-    const thumbW = thumb.offsetWidth;
-    const maxLeft = wrap.clientWidth - thumbW;
+
+  thumb.addEventListener('pointermove', e=>{
+    if(!active) return;
+    const tw = thumb.offsetWidth;
+    const ww = wrap.clientWidth;
+    const maxLeft = ww - tw;
     const newLeft = Math.min(Math.max(0, startLeft + e.clientX - startX), maxLeft);
-    const scrollable = grid.scrollWidth - grid.clientWidth;
-    // thumbを直接動かす
     thumb.style.left = newLeft + 'px';
-    // gridを連動させる
-    if(scrollable > 0) grid.scrollLeft = (newLeft / maxLeft) * scrollable;
-  });
-  document.addEventListener('mouseup', ()=>{
-    dragging=false;
-    thumb.classList.remove('dragging');
+    const scrollable = grid.scrollWidth - grid.clientWidth;
+    grid.scrollLeft = maxLeft > 0 ? (newLeft / maxLeft) * scrollable : 0;
   });
 
-  // wrap クリックでジャンプ
+  thumb.addEventListener('pointerup',   ()=>{ active=false; thumb.classList.remove('active'); });
+  thumb.addEventListener('pointercancel',()=>{ active=false; thumb.classList.remove('active'); });
+
+  // ── トラッククリックでジャンプ ──
   wrap.addEventListener('click', e=>{
-    if(e.target===thumb) return;
+    if(e.target === thumb) return;
     const rect = wrap.getBoundingClientRect();
-    const thumbW = thumb.offsetWidth;
-    const maxLeft = wrap.clientWidth - thumbW;
-    const newLeft = Math.min(Math.max(0, e.clientX - rect.left - thumbW/2), maxLeft);
+    const tw = thumb.offsetWidth;
+    const ww = wrap.clientWidth;
+    const maxLeft = ww - tw;
+    const newLeft = Math.min(Math.max(0, e.clientX - rect.left - tw/2), maxLeft);
+    thumb.style.left = newLeft + 'px';
     const scrollable = grid.scrollWidth - grid.clientWidth;
-    grid.scrollLeft = (newLeft / maxLeft) * scrollable;
+    grid.scrollLeft = maxLeft > 0 ? (newLeft / maxLeft) * scrollable : 0;
   });
 
-  // タッチ対応
-  thumb.addEventListener('touchstart', e=>{
-    dragging=true;
-    startX=e.touches[0].clientX;
-    startLeft=parseFloat(thumb.style.left)||0;
-  },{passive:true});
-  document.addEventListener('touchmove', e=>{
-    if(!dragging) return;
-    const thumbW = thumb.offsetWidth;
-    const maxLeft = wrap.clientWidth - thumbW;
-    const newLeft = Math.min(Math.max(0, startLeft + e.touches[0].clientX - startX), maxLeft);
-    const scrollable = grid.scrollWidth - grid.clientWidth;
-    grid.scrollLeft = (newLeft / maxLeft) * scrollable;
-  },{passive:true});
-  document.addEventListener('touchend', ()=>{ dragging=false; });
-
-  // カード追加を監視して更新
-  new MutationObserver(()=>requestAnimationFrame(update)).observe(grid,{childList:true});
-  setInterval(update, 600);
-  requestAnimationFrame(update);
+  // カード追加を監視
+  new MutationObserver(()=>requestAnimationFrame(updateThumb)).observe(grid,{childList:true});
+  setInterval(updateThumb, 800);
+  requestAnimationFrame(updateThumb);
 })();
+
+
+// ── サイドバー開閉 ──
+function toggleSidebar(){
+  document.getElementById('sidebar').classList.toggle('collapsed');
+}
 
 </script>
 </body>

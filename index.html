@@ -199,7 +199,7 @@ header{border-bottom:1px solid var(--border);padding:12px 0;position:sticky;top:
 .n-src{font-family:var(--mono);font-size:9px;color:var(--accent2);letter-spacing:0.8px;text-transform:uppercase;}
 .n-dot{width:2px;height:2px;border-radius:50%;background:var(--text-dim);flex-shrink:0;}
 .n-time{font-family:var(--mono);font-size:9px;color:var(--text-muted);}
-.n-flag{font-size:10px;margin-left:auto;}
+.n-flag{display:none;}
 .n-title{font-family:var(--serif);font-size:14px;line-height:1.6;color:var(--text);transition:color 0.12s;}
 .n-card:hover .n-title,.n-card:active .n-title{color:var(--accent);}
 
@@ -300,28 +300,23 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
 .scroll-top-btn{
   display:none;
   position:fixed;
-  bottom:20px;right:16px;
-  width:44px;height:44px;
+  bottom:24px;right:16px;
+  width:48px;height:48px;
   border-radius:50%;
-  border:none;
-  background:rgba(20,20,30,0.88);
-  backdrop-filter:blur(10px);
+  border:1px solid var(--border2);
+  background:rgba(12,12,15,0.92);
+  backdrop-filter:blur(12px);
   color:var(--accent);
-  font-size:20px;
+  font-size:22px;
   cursor:pointer;
-  z-index:500;
-  box-shadow:0 2px 14px rgba(0,0,0,0.55);
+  z-index:9999;
+  box-shadow:0 2px 16px rgba(0,0,0,0.6);
   align-items:center;justify-content:center;
-  transition:opacity 0.25s, transform 0.2s;
-  opacity:0;
-  pointer-events:none;
   -webkit-tap-highlight-color:transparent;
 }
 @media(max-width:768px){
   .scroll-top-btn{display:flex;}
 }
-.scroll-top-btn.show{opacity:1;pointer-events:auto;}
-.scroll-top-btn:active{transform:scale(0.9);}
 </style>
 </head>
 <body>
@@ -1108,9 +1103,8 @@ function toggleArchiveSp(){
 (function(){
   var btn = document.getElementById('scrollTopBtn');
   if(!btn) return;
-  window.addEventListener('scroll', function(){
-    btn.classList.toggle('show', window.scrollY > 200);
-  }, {passive:true});
+  // 常に表示（スマホでは常時見える）
+  btn.style.display = 'flex';
 })();
 
 </script>

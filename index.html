@@ -195,6 +195,7 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
 .archive-wrap{padding:0 12px 12px;margin-top:14px;position:relative;z-index:1;}
 @media(max-width:600px){.archive-wrap{padding:0 8px 10px;margin-top:10px;}}
 .archive-panel{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:16px 18px;}
+.archive-panel-inline{padding:14px 16px;}
 .archive-panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
 .archive-panel-title{font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:2px;text-transform:uppercase;}
 .archive-desc{font-size:11px;color:var(--text-muted);margin-bottom:14px;line-height:1.6;}
@@ -252,34 +253,32 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
       </div>
     </div>
 
-  </div>
-</div>
+    <div class="panel archive-panel-inline">
+      <div class="archive-panel-head">
+        <span class="archive-panel-title">📚 過去記事・動向検索</span>
+        <button class="archive-toggle" onclick="toggleArchive()">▸ 開く</button>
+      </div>
+      <div class="archive-body" id="archiveBody">
+        <p class="archive-desc">キーワードを入力して、Google News・Electrek・Bloomberg・Reutersなど各サービスの過去記事を横断検索します。期間も指定できます。</p>
+        <div class="archive-row">
+          <input class="archive-input" id="archInput" placeholder="例: Tesla battery, トヨタ EV..." onkeydown="if(event.key==='Enter')runArchive()">
+          <select class="archive-period" id="archPeriod">
+            <option value="">期間指定なし</option>
+            <option value="w">直近1週間</option>
+            <option value="m">直近1ヶ月</option>
+            <option value="y">直近1年</option>
+            <option value="y3">直近3年</option>
+            <option value="y5">直近5年</option>
+          </select>
+        </div>
+        <div class="archive-sites" id="archSites"></div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <button class="archive-go" onclick="runArchive()">🔍 まとめて検索</button>
+          <span style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">選択したサービスが別タブで開きます</span>
+        </div>
+      </div>
+    </div>
 
-<div class="archive-wrap">
-  <div class="archive-panel">
-    <div class="archive-panel-head">
-      <span class="archive-panel-title">📚 過去記事・動向検索</span>
-      <button class="archive-toggle" onclick="toggleArchive()">▸ 開く</button>
-    </div>
-    <div class="archive-body" id="archiveBody">
-      <p class="archive-desc">キーワードを入力して、Google News・Electrek・Bloomberg・Reutersなど各サービスの過去記事を横断検索します。期間も指定できます。</p>
-      <div class="archive-row">
-        <input class="archive-input" id="archInput" placeholder="例: Tesla battery, トヨタ EV..." onkeydown="if(event.key==='Enter')runArchive()">
-        <select class="archive-period" id="archPeriod">
-          <option value="">期間指定なし</option>
-          <option value="w">直近1週間</option>
-          <option value="m">直近1ヶ月</option>
-          <option value="y">直近1年</option>
-          <option value="y3">直近3年</option>
-          <option value="y5">直近5年</option>
-        </select>
-      </div>
-      <div class="archive-sites" id="archSites"></div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-        <button class="archive-go" onclick="runArchive()">🔍 まとめて検索</button>
-        <span style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">選択したサービスが別タブで開きます</span>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -572,7 +571,7 @@ async function fetchByKeyword(kw, idx) {
   body.innerHTML = `<div class="col-empty"><div class="col-empty-icon">📡</div><div class="col-empty-txt">「${esc(kw)}」を検索中...</div></div>`;
   if (countEl) countEl.textContent = '取得中...';
 
-  const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(kw)}&hl=ja&gl=JP&ceid=JP:ja`;
+  const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(kw)}&hl=en&gl=US&ceid=US:en`;
   let items = null;
 
   const proxies = [

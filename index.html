@@ -100,16 +100,15 @@ header{border-bottom:1px solid var(--border);padding:12px 0;position:sticky;top:
   align-items:start;
 }
 /* スクロールバーをPCでも目立つように */
-.columns-grid::-webkit-scrollbar{height:6px;}
-.columns-grid::-webkit-scrollbar-track{background:var(--surface2);border-radius:3px;}
-.columns-grid::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
-.columns-grid::-webkit-scrollbar-thumb:hover{background:var(--accent2);}
+/* columns-grid 自体のスクロールバーは非表示（上部mirrorで代替） */
+.columns-grid::-webkit-scrollbar{height:0;display:none;}
+.columns-grid{scrollbar-width:none;-ms-overflow-style:none;}
 /* 上部ミラースクロールバー */
-.scroll-mirror-wrap{overflow-x:auto;overflow-y:hidden;height:14px;margin-bottom:8px;cursor:ew-resize;}
-.scroll-mirror-wrap::-webkit-scrollbar{height:8px;}
-.scroll-mirror-wrap::-webkit-scrollbar-track{background:var(--surface2);border-radius:4px;}
-.scroll-mirror-wrap::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
-.scroll-mirror-wrap::-webkit-scrollbar-thumb:hover{background:var(--accent);transition:background 0.2s;}
+.scroll-mirror-wrap{overflow-x:scroll;overflow-y:hidden;height:16px;margin-bottom:10px;cursor:ew-resize;}
+.scroll-mirror-wrap::-webkit-scrollbar{height:10px;}
+.scroll-mirror-wrap::-webkit-scrollbar-track{background:var(--surface2);border-radius:5px;}
+.scroll-mirror-wrap::-webkit-scrollbar-thumb{background:var(--border2);border-radius:5px;min-width:40px;}
+.scroll-mirror-wrap::-webkit-scrollbar-thumb:hover{background:var(--accent2);}
 .scroll-mirror{height:1px;}
 /* スマホでは非表示 */
 @media(max-width:600px){.scroll-mirror-wrap{display:none;}}

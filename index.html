@@ -230,13 +230,7 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
       <span class="logo-sub">業界ニュース</span>
     </div>
     <div class="hdr-right">
-      <div class="lang-toggle">
-        <button class="lang-btn on" id="langOrig" onclick="setLang('orig')">原文</button>
-        <button class="lang-btn" id="langJa" onclick="setLang('ja')">日本語</button>
-        <button class="lang-btn" id="langEn" onclick="setLang('en')">English</button>
-      </div>
-      <div class="next-upd">次回更新: <span id="nextTime">--:--</span></div>
-      <button class="btn-refresh" id="refreshBtn" onclick="loadAll()">↻ 更新</button>
+<div class="next-upd" style="display:none"><span id="nextTime">--:--</span></div>
     </div>
   </div>
 </header>
@@ -253,21 +247,7 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
         <span class="no-tags">追加したキーワードが1列ずつ並びます</span>
       </div>
     </div>
-    <div class="panel">
-      <div class="src-header" onclick="toggleSrcPanel()" style="cursor:pointer;user-select:none;">
-        <div class="panel-lbl" style="margin:0">▸ ニュースソース <span id="srcCount" style="color:var(--accent2)"></span></div>
-        <div style="display:flex;align-items:center;gap:10px">
-          <button class="btn-toggle-all" id="srcToggleAllBtn" onclick="event.stopPropagation();toggleAll()" style="display:none">全選択/解除</button>
-          <span id="srcPanelArrow" style="font-family:var(--mono);font-size:11px;color:var(--text-dim);transition:transform 0.2s">▾</span>
-        </div>
-      </div>
-      <div id="srcBody" style="display:none;margin-top:11px">
-        <div style="text-align:right;margin-bottom:8px">
-          <button class="btn-toggle-all" onclick="toggleAll()">全選択 / 全解除</button>
-        </div>
-        <div class="src-groups" id="srcGroups"></div>
-      </div>
-    </div>
+
   </div>
 </div>
 
@@ -302,7 +282,7 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
 <div class="cols-wrap">
   <div class="err-banner" id="errBanner"></div>
   <div class="cols-meta">
-    <div class="cols-title">最新ニュース</div>
+    <div class="cols-title">過去記事</div>
     <div class="cols-info" id="colsInfo"></div>
   </div>
   <div class="swipe-hint" id="swipeHint">← 横にスクロールで全列表示 →</div>
@@ -311,133 +291,12 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
 
 <footer>
   <div class="ft">
-    <div class="ft-txt" id="ftTxt"><span class="live-dot"></span>自動更新: 6:00 / 11:00 / 16:00</div>
-    <div class="pills">
-      <div class="pill" id="p6">06:00</div>
-      <div class="pill" id="p11">11:00</div>
-      <div class="pill" id="p16">16:00</div>
-    </div>
+    <div class="ft-txt" id="ftTxt">BriefBoard — Google Newsで過去記事を表示</div>
   </div>
 </footer>
 
 <script>
-// ══════════════════════════════════════════════
-//  SOURCES
-// ══════════════════════════════════════════════
-const SOURCE_GROUPS = [
-  {
-    label: '🇯🇵 日本語',
-    sources: [
-      { id:'nhk',       name:'NHK 経済',       flag:'🇯🇵', url:'https://www.nhk.or.jp/rss/news/cat4.xml' },
-      { id:'bestcar',   name:'ベストカーweb',   flag:'🇯🇵', url:'https://bestcarweb.jp/feed' },
-      { id:'toyo',      name:'東洋経済',         flag:'🇯🇵', url:'https://toyokeizai.net/list/feed/rss' },
-      { id:'itmedia_n', name:'ITmedia NEWS',   flag:'🇯🇵', url:'https://rss.itmedia.co.jp/rss/2.0/news_bursts.xml' },
-      { id:'ascii',     name:'ASCII.jp',       flag:'🇯🇵', url:'https://ascii.jp/rss.xml' },
-    ]
-  },
-  {
-    label: '⚡ EV・電池（英語）',
-    sources: [
-      { id:'electrek',     name:'Electrek',      flag:'⚡', url:'https://electrek.co/feed/' },
-      { id:'insideevs',    name:'InsideEVs',      flag:'⚡', url:'https://insideevs.com/rss/articles/all/' },
-      { id:'cleantechnica',name:'CleanTechnica',  flag:'🌿', url:'https://cleantechnica.com/feed/' },
-      { id:'caranddriver', name:'Car and Driver', flag:'🚗', url:'https://www.caranddriver.com/rss/all.xml/' },
-      { id:'wired',        name:'WIRED',          flag:'🔬', url:'https://www.wired.com/feed/rss' },
-    ]
-  },
-  {
-    label: '🌐 総合ビジネス（英語）',
-    sources: [
-      { id:'bbc',       name:'BBC Business',   flag:'🇬🇧', url:'https://feeds.bbci.co.uk/news/business/rss.xml' },
-      { id:'ft',        name:'Financial Times',flag:'🇬🇧', url:'https://www.ft.com/rss/home/uk' },
-      { id:'techcrunch',name:'TechCrunch',     flag:'🇺🇸', url:'https://techcrunch.com/feed/' },
-      { id:'verge',     name:'The Verge',      flag:'🇺🇸', url:'https://www.theverge.com/rss/index.xml' },
-    ]
-  }
-];
 
-const ALL_SOURCES = SOURCE_GROUPS.flatMap(g => g.sources);
-
-// ══════════════════════════════════════════════
-//  RSS PROXY — 3段階フォールバック
-// ══════════════════════════════════════════════
-async function fetchRSS(src) {
-  const strategies = [
-    () => fetchViaRss2Json(src.url, 100),
-    () => fetchViaAllOrigins(src.url),
-    () => fetchViaCorsproxy(src.url),
-  ];
-  for (const strategy of strategies) {
-    try {
-      const items = await strategy();
-      if (items && items.length > 0) {
-        return items.map(i => ({...i, source: src.name, flag: src.flag}));
-      }
-    } catch(e) { /* try next */ }
-  }
-  return [];
-}
-
-
-// プロキシ① rss2json.com
-async function fetchViaRss2Json(url, count = 100) {
-  const api = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}&count=${count}`;
-  const res = await fetch(api, {signal: AbortSignal.timeout(10000)});
-  if (!res.ok) throw new Error('rss2json http error');
-  const data = await res.json();
-  if (data.status !== 'ok' || !data.items?.length) throw new Error('rss2json no items');
-  return data.items.map(i => ({
-    title: i.title||'',
-    link: safeUrl(i.link) || safeUrl(i.guid) || '',
-    pubDate: i.pubDate||''
-  })).filter(i => i.link); // リンクなしは除外
-}
-
-// プロキシ② allorigins.win
-async function fetchViaAllOrigins(url) {
-  const api = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-  const res = await fetch(api, {signal: AbortSignal.timeout(10000)});
-  if (!res.ok) throw new Error('allorigins http error');
-  const data = await res.json();
-  if (!data.contents) throw new Error('allorigins empty');
-  return parseRSSXML(data.contents);
-}
-
-// プロキシ③ corsproxy.io（最終手段）
-async function fetchViaCorsproxy(url) {
-  const api = `https://corsproxy.io/?${encodeURIComponent(url)}`;
-  const res = await fetch(api, {signal: AbortSignal.timeout(10000)});
-  if (!res.ok) throw new Error('corsproxy http error');
-  const text = await res.text();
-  return parseRSSXML(text);
-}
-
-// httpで始まる絶対URLだけ返す、それ以外はnull
-function safeUrl(u) {
-  if (!u) return null;
-  u = u.trim();
-  return (u.startsWith('http://') || u.startsWith('https://')) ? u : null;
-}
-
-function parseRSSXML(xml) {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(xml, 'text/xml');
-  const items = Array.from(doc.querySelectorAll('item, entry'));
-  if (!items.length) throw new Error('no items in xml');
-  return items.map(item => {
-    const titleRaw = item.querySelector('title')?.textContent?.trim() || '';
-    const linkEl   = item.querySelector('link');
-    const guid     = item.querySelector('guid')?.textContent?.trim() || '';
-    const link = safeUrl(linkEl?.getAttribute('href'))
-              || safeUrl(linkEl?.textContent?.trim())
-              || safeUrl(guid)
-              || '';
-    const pubDate = item.querySelector('pubDate')?.textContent?.trim()
-                 || item.querySelector('updated')?.textContent?.trim()
-                 || item.querySelector('published')?.textContent?.trim() || '';
-    return { title: titleRaw, link, pubDate };
-  }).filter(i => i.title && i.link); // タイトルもリンクもないものは除外
-}
 
 // ══════════════════════════════════════════════
 //  ALIAS MAP
@@ -489,115 +348,20 @@ function getAliases(kw) {
 //  STATE
 // ══════════════════════════════════════════════
 let keywords    = JSON.parse(localStorage.getItem('bb_kw')  || '[]');
-let activeSrcs  = JSON.parse(localStorage.getItem('bb_src') || JSON.stringify(ALL_SOURCES.map(s=>s.id)));
-let cachedItems = [];
 const activeTabMap = {}; // kw -> 'live' | 'hist'
 const gnewsCache = {};   // kw -> articles[]
-let schedTimer  = null;
-let errorCount  = 0;
-let currentLang = localStorage.getItem('bb_lang') || 'orig'; // 'orig' / 'ja' / 'en'
-const translateCache = {};
 
-// ══════════════════════════════════════════════
-//  LANGUAGE TOGGLE
-// ══════════════════════════════════════════════
-async function setLang(lang) {
-  currentLang = lang;
-  localStorage.setItem('bb_lang', lang);
-  document.getElementById('langOrig').classList.toggle('on', lang==='orig');
-  document.getElementById('langJa').classList.toggle('on', lang==='ja');
-  document.getElementById('langEn').classList.toggle('on', lang==='en');
 
-  if (lang === 'orig') {
-    // 原文に戻す
-    document.querySelectorAll('.n-title[data-orig]').forEach(el => {
-      el.textContent = el.dataset.orig;
-      el.removeAttribute('data-orig');
-    });
-    document.querySelectorAll('.n-trans-status').forEach(el => el.remove());
-    return;
-  }
-
-  // 翻訳先言語
-  const tl = lang === 'ja' ? 'ja' : 'en';
-  const titles = document.querySelectorAll('.n-title');
-  const toTranslate = [];
-
-  titles.forEach(el => {
-    const orig = el.dataset.orig || el.textContent;
-    // origに戻してから判定
-    const txt = orig;
-    const hasJP = /[\u3040-\u30ff\u3400-\u9fff]/.test(txt);
-    const hasEN = /[a-zA-Z]/.test(txt);
-    // 日本語モード: 英語タイトルのみ翻訳
-    // 英語モード: 日本語タイトルのみ翻訳
-    const needsTranslation = (lang==='ja' && hasEN && !hasJP) || (lang==='en' && hasJP);
-    if (needsTranslation) {
-      if (!el.dataset.orig) el.dataset.orig = txt;
-      toTranslate.push({el, orig: txt, tl});
-    } else {
-      // 翻訳不要 → 原文表示
-      if (el.dataset.orig) { el.textContent = el.dataset.orig; el.removeAttribute('data-orig'); }
-      el.parentElement.querySelector('.n-trans-status')?.remove();
-    }
-  });
-
-  if (!toTranslate.length) return;
-
-  toTranslate.forEach(({el}) => {
-    let st = el.parentElement.querySelector('.n-trans-status');
-    if (!st) {
-      st = document.createElement('span');
-      st.className = 'n-trans-status';
-      st.style.cssText = 'font-size:9px;color:var(--text-dim);font-family:var(--mono);margin-left:6px';
-      el.parentElement.insertBefore(st, el.nextSibling);
-    }
-    st.textContent = '翻訳中...';
-  });
-
-  const batchSize = 5;
-  for (let i = 0; i < toTranslate.length; i += batchSize) {
-    const batch = toTranslate.slice(i, i + batchSize);
-    await Promise.all(batch.map(async ({el, orig, tl}) => {
-      const cacheKey = `${tl}:${orig}`;
-      if (translateCache[cacheKey]) {
-        if (currentLang === lang) {
-          el.textContent = translateCache[cacheKey];
-          el.parentElement.querySelector('.n-trans-status')?.remove();
-        }
-        return;
-      }
-      try {
-        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${tl}&dt=t&q=${encodeURIComponent(orig)}`;
-        const res = await fetch(url);
-        const data = await res.json();
-        const translated = data[0]?.map(d => d[0]).join('') || orig;
-        translateCache[cacheKey] = translated;
-        if (currentLang === lang) {
-          el.textContent = translated;
-          el.parentElement.querySelector('.n-trans-status')?.remove();
-        }
-      } catch(e) {
-        el.parentElement.querySelector('.n-trans-status')?.remove();
-      }
-    }));
-  }
-}
 
 // ══════════════════════════════════════════════
 //  INIT
 // ══════════════════════════════════════════════
 function init() {
-  document.getElementById('langOrig').classList.toggle('on', currentLang==='orig');
-  document.getElementById('langJa').classList.toggle('on', currentLang==='ja');
-  document.getElementById('langEn').classList.toggle('on', currentLang==='en');
   renderTags();
-  renderSources();
-  renderArchSites();
-  updateClock();
-  scheduleUpdates();
-  loadAll();
+  renderColumns();
+  updateSwipeHint();
 }
+
 
 // ══════════════════════════════════════════════
 //  KEYWORDS
@@ -634,89 +398,7 @@ function renderTags() {
     : keywords.map(w=>`<div class="tag">${esc(w)}<button class="tag-x" title="過去記事を検索" onclick="fillArchive('${escAttr(w)}')" style="background:none;border:none;cursor:pointer;font-size:10px;color:var(--accent2);padding:0 2px;margin-left:2px;">📚</button><button class="tag-x" onclick="removeKw('${escAttr(w)}')">×</button></div>`).join('');
 }
 
-// ══════════════════════════════════════════════
-//  SOURCES
-// ══════════════════════════════════════════════
-function renderSources() {
-  document.getElementById('srcGroups').innerHTML = SOURCE_GROUPS.map(g=>`
-    <div>
-      <div class="src-group-label">${g.label}</div>
-      <div class="src-chips">${g.sources.map(s=>{
-        const on = activeSrcs.includes(s.id);
-        return `<div class="src-chip${on?' on':''}" onclick="toggleSrc('${s.id}')"><div class="chip-dot"></div>${esc(s.name)}</div>`;
-      }).join('')}</div>
-    </div>`).join('');
-  updateSrcCount();
-}
-function toggleSrc(id) {
-  activeSrcs = activeSrcs.includes(id) ? activeSrcs.filter(s=>s!==id) : [...activeSrcs, id];
-  localStorage.setItem('bb_src', JSON.stringify(activeSrcs));
-  renderSources();
-  loadAll();
-}
-function toggleAll() {
-  activeSrcs = activeSrcs.length === ALL_SOURCES.length ? [] : ALL_SOURCES.map(s=>s.id);
-  localStorage.setItem('bb_src', JSON.stringify(activeSrcs));
-  renderSources();
-  loadAll();
-}
-function toggleSrcPanel() {
-  const body = document.getElementById('srcBody');
-  const arrow = document.getElementById('srcPanelArrow');
-  const open = body.style.display === 'none';
-  body.style.display = open ? 'block' : 'none';
-  arrow.style.transform = open ? 'rotate(180deg)' : '';
-}
-function updateSrcCount() {
-  const el = document.getElementById('srcCount');
-  if (el) el.textContent = `(${activeSrcs.length}/${ALL_SOURCES.length})`;
-}
 
-// ══════════════════════════════════════════════
-//  LOAD
-// ══════════════════════════════════════════════
-async function loadAll() {
-  const btn = document.getElementById('refreshBtn');
-  btn.disabled = true; btn.textContent = '取得中...';
-  renderSkeletons();
-  hideBanner();
-  errorCount = 0;
-
-  const srcs = ALL_SOURCES.filter(s => activeSrcs.includes(s.id));
-  if (!srcs.length) {
-    cachedItems = []; renderColumns();
-    btn.disabled = false; btn.textContent = '↻ 更新';
-    return;
-  }
-
-  const results = await Promise.allSettled(srcs.map(s => fetchRSS(s)));
-  const failed = [];
-  cachedItems = [];
-
-  results.forEach((r, i) => {
-    if (r.status === 'fulfilled' && r.value.length > 0) {
-      cachedItems.push(...r.value);
-    } else {
-      failed.push(srcs[i].name);
-      errorCount++;
-    }
-  });
-
-  cachedItems.sort((a,b) => new Date(b.pubDate) - new Date(a.pubDate));
-
-  if (cachedItems.length === 0 && failed.length > 0) {
-    showBanner(`⚠️ 全ソースの取得に失敗しました。<br>
-      考えられる原因：①会社のネットワーク（プロキシ・ファイアウォール）が外部APIをブロックしている　②一時的なサービス障害<br>
-      対処：少し待ってから「↻ 更新」を押してください。それでも失敗する場合はネットワーク管理者にご確認ください。<br>
-      <small style="color:var(--text-dim)">失敗ソース: ${failed.join('、')}</small>`);
-  } else if (failed.length > 0) {
-    showBanner(`一部取得できませんでした（${failed.length}件失敗）: ${failed.join('、')}`);
-  }
-
-  renderColumns();
-  setFooterUpdated();
-  btn.disabled = false; btn.textContent = '↻ 更新';
-}
 
 // ══════════════════════════════════════════════
 //  RENDER
@@ -727,39 +409,27 @@ function renderColumns() {
   grid.innerHTML = '';
 
   if (!keywords.length) {
-    info.textContent = `${cachedItems.length} 件取得`;
-    grid.appendChild(buildCol('すべて', cachedItems, 0));
+    info.textContent = 'キーワードを追加してください';
+    grid.innerHTML = '<div style="color:var(--text-dim);font-size:13px;padding:40px 20px;">← キーワードを追加すると列が表示されます</div>';
     return;
   }
 
-  info.textContent = `${keywords.length} 列 / ${cachedItems.length} 件取得`;
+  info.textContent = `${keywords.length} 列`;
   keywords.forEach((kw, i) => {
-    // スペースで分割してAND検索（全単語を含む記事のみ）
-    const terms = kw.split(/\s+/).filter(Boolean);
-    const matched = cachedItems.filter(a => {
-      const hay = (a.title + ' ' + (a.source || '')).toLowerCase();
-      return terms.every(term => {
-        const aliases = getAliases(term);
-        return aliases.some(al => hay.includes(al.toLowerCase()));
-      });
-    });
-    const col = buildCol(kw, matched, i);
+    const col = buildCol(kw, i);
     col.style.animationDelay = `${i * 55}ms`;
     grid.appendChild(col);
   });
-  // 翻訳モードなら描画後に自動翻訳
-  if (currentLang !== 'orig') setTimeout(() => setLang(currentLang), 100);
 }
 
-function buildCol(kw, articles, idx) {
+
+function buildCol(kw, idx) {
   const col = document.createElement('div');
   col.className = 'col';
 
-  // ── ヘッダー ──
   const head = document.createElement('div');
   head.className = 'col-head';
 
-  // ◀ ▶ 列移動ボタン
   const btnL = document.createElement('button');
   btnL.className = 'col-move-btn';
   btnL.textContent = '◀';
@@ -778,33 +448,11 @@ function buildCol(kw, articles, idx) {
   btnR.disabled = idx === keywords.length - 1;
   btnR.addEventListener('click', e => { e.stopPropagation(); moveCol(idx, +1); });
 
-  const savedTab = activeTabMap[kw] || 'hist';
-
-  const tabWrap = document.createElement('div');
-  tabWrap.style.cssText = 'display:flex;gap:4px;align-items:center;flex-shrink:0';
-
-  const tabLive = document.createElement('span');
-  tabLive.id = `tab-live-${idx}`;
-  tabLive.textContent = '最新';
-  tabLive.className = 'col-tab' + (savedTab === 'live' ? ' on' : '');
-  tabLive.addEventListener('click', () => showTab('live', kw, idx));
-
-  const tabHist = document.createElement('span');
-  tabHist.id = `tab-hist-${idx}`;
-  tabHist.textContent = '過去記事';
-  tabHist.className = 'col-tab' + (savedTab === 'hist' ? ' on' : '');
-  tabHist.addEventListener('click', () => showTab('hist', kw, idx));
-
   const countSpan = document.createElement('span');
   countSpan.className = 'col-count';
   countSpan.id = `col-count-${idx}`;
-  countSpan.textContent = articles.length + ' 件';
+  countSpan.textContent = '';
 
-  tabWrap.appendChild(tabLive);
-  tabWrap.appendChild(tabHist);
-  tabWrap.appendChild(countSpan);
-
-  // ヘッダー左側: ◀ キーワード ▶
   const kwRow = document.createElement('div');
   kwRow.style.cssText = 'display:flex;align-items:center;gap:4px;min-width:0;flex:1;overflow:hidden';
   kwRow.appendChild(btnL);
@@ -812,23 +460,18 @@ function buildCol(kw, articles, idx) {
   kwRow.appendChild(btnR);
 
   head.appendChild(kwRow);
-  head.appendChild(tabWrap);
+  head.appendChild(countSpan);
   col.appendChild(head);
 
   const body = document.createElement('div');
   body.className = 'col-body';
   body.id = `col-body-${idx}`;
-  const sorted = [...articles].sort((a,b) => new Date(b.pubDate||0) - new Date(a.pubDate||0));
-
-  if (savedTab === 'hist') {
-    renderLiveArticles(body, sorted, idx, kw);
-    setTimeout(() => showTab('hist', kw, idx), 0);
-  } else {
-    renderLiveArticles(body, sorted, idx, kw);
-  }
   col.appendChild(body);
+
+  fetchGNews(kw, idx);
   return col;
 }
+
 
 // 列を左右に移動（キーワード配列も連動）
 function moveCol(idx, dir) {
@@ -840,86 +483,31 @@ function moveCol(idx, dir) {
   renderColumns();
 }
 
-function renderLiveArticles(body, articles, idx, kw) {
-  body.innerHTML = '';
-  if (!articles.length) {
-    body.innerHTML = `<div class="col-empty"><div class="col-empty-icon">🔍</div><div class="col-empty-txt">「${esc(kw)}」の記事が見つかりません<br>ソースを増やすか別のキーワードをお試しください</div></div>`;
-    return;
-  }
-  articles.forEach((a, i) => {
-    const card = document.createElement('div');
-    card.className = 'n-card';
-    card.style.cursor = 'pointer';
-    card.style.animationDelay = `${idx * 55 + i * 35}ms`;
-    card.addEventListener('click', () => window.open(a.link, '_blank'));
-
-    let domain = '';
-    try { domain = new URL(a.link).hostname.replace(/^www\./,''); } catch(e) {}
-
-    card.innerHTML = `
-      <div class="n-meta">
-        <span class="n-src">${esc(a.source)}</span>
-        <span class="n-dot"></span>
-        <span class="n-time">${relTime(a.pubDate)}</span>
-        <span class="n-flag">${a.flag||''}</span>
-      </div>
-      <div class="n-title">${esc(a.title)}</div>
-      <div class="n-credit">出典: <span class="n-credit-src">${esc(a.source)}</span>${domain ? ` &nbsp;|&nbsp; <span class="n-credit-domain">${esc(domain)}</span>` : ''}</div>`;
-
-    // 翻訳ボタン（Google翻訳で直接開く、ポップアップなし）
-    const actions = document.createElement('div');
-    actions.className = 'n-actions';
-
-    const transBtn = document.createElement('button');
-    transBtn.className = 'n-trans-btn';
-    transBtn.textContent = '🌐 Google翻訳で開く';
-    transBtn.addEventListener('click', e => {
-      e.stopPropagation();
-      window.open('https://translate.google.com/translate?sl=auto&tl=ja&u=' + encodeURIComponent(a.link), '_blank');
-    });
-
-    actions.appendChild(transBtn);
-    card.appendChild(actions);
-    body.appendChild(card);
-  });
-}
 
 // ══════════════════════════════════════════════
 //  過去記事タブ（Google News RSS）
 // ══════════════════════════════════════════════
-async function showTab(tab, kw, idx) {
-  activeTabMap[kw] = tab;
-  document.getElementById(`tab-live-${idx}`)?.classList.toggle('on', tab === 'live');
-  document.getElementById(`tab-hist-${idx}`)?.classList.toggle('on', tab === 'hist');
-  const body = document.getElementById(`col-body-${idx}`);
-  if (!body) return;
 
-  if (tab === 'live') {
-    const terms = kw.split(/\s+/).filter(Boolean);
-    const matched = cachedItems.filter(item => {
-      const hay = (item.title + ' ' + (item.source || '')).toLowerCase();
-      return terms.every(term => {
-        const aliases = getAliases(term);
-        return aliases.some(al => hay.includes(al.toLowerCase()));
-      });
-    });
-    document.getElementById(`col-count-${idx}`).textContent = matched.length + ' 件';
-    renderLiveArticles(body, [...matched].sort((a,b) => new Date(b.pubDate||0)-new Date(a.pubDate||0)), idx, kw);
-    return;
-  }
+// ══════════════════════════════════════════════
+//  GOOGLE NEWS FETCH
+// ══════════════════════════════════════════════
+async function fetchGNews(kw, idx) {
+  const body = document.getElementById(`col-body-${idx}`);
+  const countEl = document.getElementById(`col-count-${idx}`);
+  if (!body) return;
 
   // キャッシュあれば即表示
   const cacheKey = kw.toLowerCase();
   if (gnewsCache[cacheKey]) {
     renderHistArticles(body, gnewsCache[cacheKey], idx);
-    document.getElementById(`col-count-${idx}`).textContent = gnewsCache[cacheKey].length + ' 件';
+    if (countEl) countEl.textContent = gnewsCache[cacheKey].length + ' 件';
     return;
   }
 
   body.innerHTML = `<div class="col-empty"><div class="col-empty-icon">📡</div><div class="col-empty-txt">「${esc(kw)}」を検索中...</div></div>`;
-  document.getElementById(`col-count-${idx}`).textContent = '取得中...';
+  if (countEl) countEl.textContent = '取得中...';
 
-  const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(kw)}&hl=en&gl=US&ceid=US:en`;
+  const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(kw)}&hl=ja&gl=JP&ceid=JP:ja`;
   let items = null;
 
   const proxies = [
@@ -943,7 +531,7 @@ async function showTab(tab, kw, idx) {
           title:   dash > 0 ? titleRaw.slice(0, dash) : titleRaw,
           link:    safeUrl(i.link) || safeUrl(i.guid) || '',
           pubDate: i.pubDate || '',
-          source:  dash > 0 ? titleRaw.slice(dash+3) : (i.source?.name || 'Google News'),
+          source:  dash > 0 ? titleRaw.slice(dash+3) : 'Google News',
         };
       }).filter(i => i.title);
     },
@@ -958,14 +546,14 @@ async function showTab(tab, kw, idx) {
 
   if (!items || !items.length) {
     body.innerHTML = `<div class="col-empty"><div class="col-empty-icon">🔍</div><div class="col-empty-txt">記事が見つかりませんでした</div></div>`;
-    document.getElementById(`col-count-${idx}`).textContent = '0 件';
+    if (countEl) countEl.textContent = '0 件';
     return;
   }
 
   items.sort((a,b) => new Date(b.pubDate||0) - new Date(a.pubDate||0));
   gnewsCache[cacheKey] = items;
   renderHistArticles(body, items, idx);
-  document.getElementById(`col-count-${idx}`).textContent = items.length + ' 件';
+  if (countEl) countEl.textContent = items.length + ' 件';
 }
 
 function parseGNewsXML(xml) {
@@ -1016,23 +604,7 @@ function renderHistArticles(body, articles, idx) {
 }
 
 
-function renderSkeletons() {
-  const grid = document.getElementById('colsGrid');
-  const count = Math.max(keywords.length, 1);
-  grid.innerHTML = Array(count).fill(0).map((_,i)=>`
-    <div class="col" style="animation-delay:${i*55}ms">
-      <div class="col-head"><span class="col-kw">${esc(keywords[i]||'...')}</span><span class="col-count">—</span></div>
-      <div class="col-body">${Array(5).fill(`<div class="sk-card"><span class="sk s"></span><span class="sk l"></span><span class="sk m"></span></div>`).join('')}</div>
-    </div>`).join('');
-}
 
-function showBanner(msg) {
-  const b = document.getElementById('errBanner');
-  b.innerHTML = msg; b.classList.add('show');
-}
-function hideBanner() {
-  document.getElementById('errBanner').classList.remove('show');
-}
 
 // ══════════════════════════════════════════════
 //  UTILS
@@ -1041,14 +613,6 @@ function esc(s){return String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt
 function escAttr(s){return String(s||'').replace(/'/g,"\\'");}
 
 // 翻訳ポップアップ開閉
-function toggleTransPopup(e, btn) {
-  e.preventDefault();
-  e.stopPropagation();
-  const popup = btn.nextElementSibling;
-  const isOpen = popup.classList.contains('open');
-  document.querySelectorAll('.trans-popup.open').forEach(p => p.classList.remove('open'));
-  if (!isOpen) popup.classList.add('open');
-}
 // どこかクリックしたら全ポップアップを閉じる
 document.addEventListener('click', () => {
   document.querySelectorAll('.trans-popup.open').forEach(p => p.classList.remove('open'));
@@ -1119,32 +683,7 @@ function relTime(d){
   const abs = dt.toLocaleString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
   return `${rel} <span style="color:var(--text-dim);font-size:9px">(${abs})</span>`;
 }
-function setFooterUpdated(){
-  const t=new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-  document.getElementById('ftTxt').innerHTML=`<span class="live-dot"></span>最終更新 <span style="color:var(--accent2)">${t}</span> &nbsp;|&nbsp; 自動更新: 6:00 / 11:00 / 16:00`;
-}
 
-// ══════════════════════════════════════════════
-//  SCHEDULE
-// ══════════════════════════════════════════════
-function scheduleUpdates(){
-  if(schedTimer)clearTimeout(schedTimer);
-  const now=new Date(),midnight=new Date(now);midnight.setHours(0,0,0,0);
-  let ms=null;
-  for(const h of [6,11,16]){const t=midnight.getTime()+h*3600000;if(t>now.getTime()){ms=t-now.getTime();break;}}
-  if(!ms){const tom=new Date(midnight);tom.setDate(tom.getDate()+1);tom.setHours(6,0,0,0);ms=tom.getTime()-now.getTime();}
-  schedTimer=setTimeout(()=>{loadAll();scheduleUpdates();},ms);
-}
-function updateClock(){
-  const now=new Date(),h=now.getHours(),m=now.getMinutes();
-  ['p6','p11','p16'].forEach(id=>document.getElementById(id)?.classList.remove('on'));
-  let next=null;
-  for(const t of [6,11,16]){if(t*60>h*60+m){next=t;break;}}
-  if(!next)next=6;
-  document.getElementById(`p${next}`)?.classList.add('on');
-  document.getElementById('nextTime').textContent=`${String(next).padStart(2,'0')}:00${next===6&&h>=16?' (翌日)':''}`;
-}
-setInterval(updateClock,60000);
 init();
 </script>
 </body>

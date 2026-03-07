@@ -339,7 +339,7 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
     <div class="panel">
       <div class="panel-lbl" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;">
         <span>監視キーワード</span>
-        <span style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:0;text-transform:none;font-weight:normal;">（␣）＝AND　（／）＝OR</span>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:0;text-transform:none;font-weight:normal;">スペース（␣）＝AND　　スラッシュ（／）＝OR</span>
       </div>
       <div class="kw-row">
         <input class="kw-input" id="kwInput" placeholder="例: トヨタ, EV..." onkeydown="if(event.key==='Enter')addKw()">
@@ -1001,80 +1001,99 @@ init();
 
 
 
-// ── カスタム横スライダー（pointerEvents版）──
-(function(){
-  const wrap  = document.getElementById('colsSliderWrap');
-  const thumb = document.getElementById('colsSliderThumb');
-  const grid  = document.getElementById('colsGrid');
-  if(!wrap||!thumb||!grid) return;
-
-  // サムの幅・位置をgridの状態から計算して更新
-  function updateThumb(){
-    const sw = grid.scrollWidth, cw = grid.clientWidth, sl = grid.scrollLeft;
-    if(sw <= cw){ wrap.style.display='none'; return; }
-    wrap.style.display='block';
-    const ww = wrap.clientWidth;
-    const ratio = cw / sw;
-    const tw = Math.max(40, ww * ratio);
-    const maxLeft = ww - tw;
-    const left = (sl / (sw - cw)) * maxLeft;
-    thumb.style.width = tw + 'px';
-    thumb.style.left  = Math.min(left, maxLeft) + 'px';
-  }
-
-  // gridスクロール → サム位置更新
-  grid.addEventListener('scroll', updateThumb, {passive:true});
-
-  // ── ドラッグ ──
-  let active = false, startX = 0, startLeft = 0;
-
-  thumb.addEventListener('pointerdown', e=>{
-    active = true;
-    startX = e.clientX;
-    startLeft = parseFloat(thumb.style.left) || 0;
-    thumb.setPointerCapture(e.pointerId);
-    thumb.classList.add('active');
-    e.preventDefault();
-  });
-
-  thumb.addEventListener('pointermove', e=>{
-    if(!active) return;
-    const tw = thumb.offsetWidth;
-    const ww = wrap.clientWidth;
-    const maxLeft = ww - tw;
-    const newLeft = Math.min(Math.max(0, startLeft + e.clientX - startX), maxLeft);
-    thumb.style.left = newLeft + 'px';
-    const scrollable = grid.scrollWidth - grid.clientWidth;
-    grid.scrollLeft = maxLeft > 0 ? (newLeft / maxLeft) * scrollable : 0;
-  });
-
-  thumb.addEventListener('pointerup',   ()=>{ active=false; thumb.classList.remove('active'); });
-  thumb.addEventListener('pointercancel',()=>{ active=false; thumb.classList.remove('active'); });
-
-  // ── トラッククリックでジャンプ ──
-  wrap.addEventListener('click', e=>{
-    if(e.target === thumb) return;
-    const rect = wrap.getBoundingClientRect();
-    const tw = thumb.offsetWidth;
-    const ww = wrap.clientWidth;
-    const maxLeft = ww - tw;
-    const newLeft = Math.min(Math.max(0, e.clientX - rect.left - tw/2), maxLeft);
-    thumb.style.left = newLeft + 'px';
-    const scrollable = grid.scrollWidth - grid.clientWidth;
-    grid.scrollLeft = maxLeft > 0 ? (newLeft / maxLeft) * scrollable : 0;
-  });
-
-  // カード追加を監視
-  new MutationObserver(()=>requestAnimationFrame(updateThumb)).observe(grid,{childList:true});
-  setInterval(updateThumb, 800);
-  requestAnimationFrame(updateThumb);
-})();
 
 
 // ── サイドバー開閉 ──
 function toggleSidebar(){
   document.getElementById('sidebar').classList.toggle('collapsed');
 }
+
+
+
+
+// ── カスタム横スライダー ──
+(function(){
+  var wrap  = document.getElementById('colsSliderWrap');
+  var thumb = document.getElementById('colsSliderThumb');
+  var grid  = document.getElementById('colsGrid');
+  if(!wrap || !thumb || !grid){ return; }
+
+  function updateThumb(){
+    var sw = grid.scrollWidth;
+    var cw = grid.clientWidth;
+    var ww = wrap.getBoundingClientRect().width;
+    if(ww < 10) return; // まだレイアウト未確定
+    if(sw <= cw + 4){
+      thumb.style.display = 'none';
+      return;
+    }
+    thumb.style.display = 'block';
+    var tw = Math.max(44, Math.floor(ww * cw / sw));
+    var maxL = ww - tw;
+    var sl = grid.scrollLeft;
+    var left = maxL > 0 ? Math.floor((sl / (sw - cw)) * maxL) : 0;
+    thumb.style.width = tw + 'px';
+    thumb.style.left  = Math.min(left, maxL) + 'px';
+  }
+
+  // grid スクロール → サム位置
+  grid.addEventListener('scroll', updateThumb, {passive:true});
+
+  // ドラッグ（pointerCapture）
+  var active=false, ox=0, ol=0;
+
+  thumb.addEventListener('pointerdown', function(e){
+    active = true;
+    ox = e.clientX;
+    ol = parseFloat(thumb.style.left)||0;
+    thumb.setPointerCapture(e.pointerId);
+    thumb.style.background='var(--accent2)';
+    e.preventDefault();
+    e.stopPropagation();
+  });
+
+  thumb.addEventListener('pointermove', function(e){
+    if(!active) return;
+    var ww   = wrap.getBoundingClientRect().width;
+    var tw   = thumb.getBoundingClientRect().width;
+    var maxL = ww - tw;
+    var nl   = Math.min(Math.max(0, ol + (e.clientX - ox)), maxL);
+    thumb.style.left = nl + 'px';
+    var sc = grid.scrollWidth - grid.clientWidth;
+    grid.scrollLeft = maxL > 0 ? (nl / maxL) * sc : 0;
+  });
+
+  function end(){ active=false; thumb.style.background=''; }
+  thumb.addEventListener('pointerup', end);
+  thumb.addEventListener('pointercancel', end);
+  thumb.addEventListener('lostpointercapture', end);
+
+  // track クリックでジャンプ
+  wrap.addEventListener('pointerdown', function(e){
+    if(e.target===thumb) return;
+    var rect = wrap.getBoundingClientRect();
+    var tw   = thumb.getBoundingClientRect().width;
+    var ww   = rect.width;
+    var maxL = ww - tw;
+    var nl   = Math.min(Math.max(0, e.clientX - rect.left - tw/2), maxL);
+    var sc   = grid.scrollWidth - grid.clientWidth;
+    grid.scrollLeft = maxL > 0 ? (nl / maxL) * sc : 0;
+    thumb.style.left = nl + 'px';
+  });
+
+  // カード追加・サイズ変化を監視
+  new MutationObserver(function(){
+    requestAnimationFrame(updateThumb);
+  }).observe(grid, {childList:true, subtree:false});
+
+  new ResizeObserver(function(){
+    requestAnimationFrame(updateThumb);
+  }).observe(grid);
+
+  // 定期更新（念のため）
+  setInterval(function(){ requestAnimationFrame(updateThumb); }, 500);
+  requestAnimationFrame(updateThumb);
+})();
 
 </script>
 </body>

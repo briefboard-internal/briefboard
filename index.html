@@ -104,6 +104,15 @@ header{border-bottom:1px solid var(--border);padding:12px 0;position:sticky;top:
 .columns-grid::-webkit-scrollbar-track{background:var(--surface2);border-radius:3px;}
 .columns-grid::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
 .columns-grid::-webkit-scrollbar-thumb:hover{background:var(--accent2);}
+/* 上部ミラースクロールバー */
+.scroll-mirror-wrap{overflow-x:auto;overflow-y:hidden;height:10px;margin-bottom:4px;}
+.scroll-mirror-wrap::-webkit-scrollbar{height:6px;}
+.scroll-mirror-wrap::-webkit-scrollbar-track{background:var(--surface2);border-radius:3px;}
+.scroll-mirror-wrap::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+.scroll-mirror-wrap::-webkit-scrollbar-thumb:hover{background:var(--accent2);}
+.scroll-mirror{height:1px;}
+/* スマホでは非表示 */
+@media(max-width:600px){.scroll-mirror-wrap{display:none;}}
 @media(max-width:600px){
   .columns-grid{gap:10px;padding-bottom:12px;}
 }
@@ -292,6 +301,9 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
     <div class="cols-info" id="colsInfo"></div>
   </div>
   <div class="swipe-hint" id="swipeHint">← 横にスクロールで全列表示 →</div>
+  <div class="scroll-mirror-wrap" id="scrollMirrorWrap">
+    <div class="scroll-mirror" id="scrollMirror"><div id="scrollMirrorInner"></div></div>
+  </div>
   <div class="columns-grid" id="colsGrid"></div>
 </div>
 
@@ -890,6 +902,31 @@ function relTime(d){
 }
 
 init();
+
+// ── 上部ミラースクロールバー同期 ──
+(function() {
+  const grid = document.getElementById('colsGrid');
+  const mirror = document.getElementById('scrollMirrorWrap');
+  const inner = document.getElementById('scrollMirrorInner');
+
+  function syncMirrorWidth() {
+    inner.style.width = grid.scrollWidth + 'px';
+  }
+
+  // grid → mirror
+  grid.addEventListener('scroll', () => {
+    mirror.scrollLeft = grid.scrollLeft;
+  });
+  // mirror → grid
+  mirror.addEventListener('scroll', () => {
+    grid.scrollLeft = mirror.scrollLeft;
+  });
+
+  // 幅の変化を監視（列追加/削除時）
+  const ro = new ResizeObserver(syncMirrorWidth);
+  ro.observe(grid);
+  syncMirrorWidth();
+})();
 </script>
 </body>
 </html>

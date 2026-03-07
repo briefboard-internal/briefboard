@@ -91,11 +91,6 @@ header{border-bottom:1px solid var(--border);padding:12px 0;position:sticky;top:
 .cols-info{font-family:var(--mono);font-size:10px;color:var(--text-muted);}
 
 /* Desktop & Mobile: horizontal scroll */
-.cols-scroll-wrap{
-  display:flex;
-  flex-direction:column;
-  gap:0;
-}
 /* スクロールバー専用の薄いdiv（上段） */
 .cols-scrollbar-top{
   overflow-x:scroll;
@@ -254,6 +249,38 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
 /* カード内過去検索ボタン */
 
 
+
+/* ── カスタム横スライダー ── */
+.cols-slider-wrap{
+  position:relative;
+  height:14px;
+  background:var(--surface2);
+  border-radius:7px;
+  margin-bottom:10px;
+  cursor:pointer;
+}
+.cols-slider-track{
+  position:absolute;
+  inset:0;
+  border-radius:7px;
+}
+.cols-slider-thumb{
+  position:absolute;
+  top:50%;
+  transform:translateY(-50%);
+  height:10px;
+  min-width:40px;
+  background:var(--border2);
+  border-radius:5px;
+  cursor:grab;
+  transition:background 0.15s;
+  user-select:none;
+}
+.cols-slider-thumb:hover,.cols-slider-thumb.dragging{
+  background:var(--accent2);
+  cursor:grabbing;
+}
+@media(max-width:600px){.cols-slider-wrap{display:none;}}
 </style>
 </head>
 <body>
@@ -328,10 +355,11 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
     </div>
     <div class="swipe-hint" id="swipeHint">← 横にスクロールで全列表示 →</div>
   </div>
-  <div class="cols-scroll-wrap">
-    <div class="cols-scrollbar-top" id="colsScrollbarTop"><div class="cols-scrollbar-top-inner" id="colsScrollbarInner"></div></div>
-    <div class="columns-grid" id="colsGrid"></div>
+  <div class="cols-slider-wrap" id="colsSliderWrap">
+    <div class="cols-slider-track" id="colsSliderTrack"></div>
+    <div class="cols-slider-thumb" id="colsSliderThumb"></div>
   </div>
+  <div class="columns-grid" id="colsGrid"></div>
 </div>
 
 <footer>
@@ -674,7 +702,7 @@ async function fetchByKeyword(kw, idx) {
   renderArticleCards(body, items, idx, kw);
   if (countEl) countEl.textContent = items.length + ' 件';
   document.getElementById('ftTxt').innerHTML = `<span class="live-dot"></span>最終更新 <span style="color:var(--accent2)">${new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})}</span>`;
-  if (window.syncScrollbarWidth) window.syncScrollbarWidth();
+
 }
 
 
@@ -931,46 +959,90 @@ function relTime(d){
 
 init();
 
-// ── 上部スクロールバー同期 ──
+
+
+
+
+
+
+
+
+// ── カスタム横スライダー ──
 (function(){
   const grid  = document.getElementById('colsGrid');
-  const bar   = document.getElementById('colsScrollbarTop');
-  const inner = document.getElementById('colsScrollbarInner');
-  let syncing = false;
+  const wrap  = document.getElementById('colsSliderWrap');
+  const thumb = document.getElementById('colsSliderThumb');
+  if(!grid||!wrap||!thumb) return;
 
-  function updateWidth(){
-    const w = grid.scrollWidth;
-    if(w > 0) inner.style.width = w + 'px';
+  function update(){
+    const scrollable = grid.scrollWidth - grid.clientWidth;
+    if(scrollable <= 0){ wrap.style.display='none'; return; }
+    wrap.style.display='block';
+    const ratio = grid.clientWidth / grid.scrollWidth;
+    const thumbW = Math.max(40, wrap.clientWidth * ratio);
+    thumb.style.width = thumbW + 'px';
+    const maxLeft = wrap.clientWidth - thumbW;
+    const left = (grid.scrollLeft / scrollable) * maxLeft;
+    thumb.style.left = Math.min(left, maxLeft) + 'px';
   }
-  function onGridScroll(){
-    if(syncing) return; syncing = true;
-    bar.scrollLeft = grid.scrollLeft;
-    syncing = false;
-  }
-  function onBarScroll(){
-    if(syncing) return; syncing = true;
-    grid.scrollLeft = bar.scrollLeft;
-    syncing = false;
-  }
-  grid.addEventListener('scroll', onGridScroll);
-  bar.addEventListener('scroll', onBarScroll);
 
-  // カード追加のたびに幅を再計算
-  new MutationObserver(() => {
-    requestAnimationFrame(updateWidth);
-  }).observe(grid, {childList:true});
+  // gridスクロール → thumb移動
+  grid.addEventListener('scroll', update);
 
-  // 念のため定期ポーリング（500ms）
-  setInterval(updateWidth, 500);
+  // thumb ドラッグ → gridスクロール
+  let dragging=false, startX=0, startLeft=0;
+  thumb.addEventListener('mousedown', e=>{
+    dragging=true;
+    startX=e.clientX;
+    startLeft=parseFloat(thumb.style.left)||0;
+    thumb.classList.add('dragging');
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', e=>{
+    if(!dragging) return;
+    const thumbW = thumb.offsetWidth;
+    const maxLeft = wrap.clientWidth - thumbW;
+    const newLeft = Math.min(Math.max(0, startLeft + e.clientX - startX), maxLeft);
+    const scrollable = grid.scrollWidth - grid.clientWidth;
+    grid.scrollLeft = (newLeft / maxLeft) * scrollable;
+  });
+  document.addEventListener('mouseup', ()=>{
+    dragging=false;
+    thumb.classList.remove('dragging');
+  });
 
-  // 初期実行（DOMContentLoaded後）
-  requestAnimationFrame(updateWidth);
+  // wrap クリックでジャンプ
+  wrap.addEventListener('click', e=>{
+    if(e.target===thumb) return;
+    const rect = wrap.getBoundingClientRect();
+    const thumbW = thumb.offsetWidth;
+    const maxLeft = wrap.clientWidth - thumbW;
+    const newLeft = Math.min(Math.max(0, e.clientX - rect.left - thumbW/2), maxLeft);
+    const scrollable = grid.scrollWidth - grid.clientWidth;
+    grid.scrollLeft = (newLeft / maxLeft) * scrollable;
+  });
+
+  // タッチ対応
+  thumb.addEventListener('touchstart', e=>{
+    dragging=true;
+    startX=e.touches[0].clientX;
+    startLeft=parseFloat(thumb.style.left)||0;
+  },{passive:true});
+  document.addEventListener('touchmove', e=>{
+    if(!dragging) return;
+    const thumbW = thumb.offsetWidth;
+    const maxLeft = wrap.clientWidth - thumbW;
+    const newLeft = Math.min(Math.max(0, startLeft + e.touches[0].clientX - startX), maxLeft);
+    const scrollable = grid.scrollWidth - grid.clientWidth;
+    grid.scrollLeft = (newLeft / maxLeft) * scrollable;
+  },{passive:true});
+  document.addEventListener('touchend', ()=>{ dragging=false; });
+
+  // カード追加を監視して更新
+  new MutationObserver(()=>requestAnimationFrame(update)).observe(grid,{childList:true});
+  setInterval(update, 600);
+  requestAnimationFrame(update);
 })();
-
-
-
-
-
 
 </script>
 </body>

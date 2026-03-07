@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>BriefBoard — 業界ニュース</title>
+<title>BriefBoard</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -26,7 +26,7 @@ header{border-bottom:1px solid var(--border);padding:12px 0;position:sticky;top:
 .hdr{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 16px;}
 .logo{display:flex;align-items:baseline;gap:8px;flex-shrink:0;}
 .logo-mark{font-family:var(--mono);font-size:17px;font-weight:500;color:var(--accent);letter-spacing:-1px;}
-.logo-sub{font-family:var(--mono);font-size:9px;color:var(--text-muted);letter-spacing:2px;text-transform:uppercase;}
+.logo-sub{font-family:var(--mono);font-size:9px;color:var(--text-muted);letter-spacing:1px;}
 @media(max-width:480px){.logo-sub{display:none;}}
 .hdr-right{display:flex;align-items:center;gap:10px;}
 .next-upd{font-family:var(--mono);font-size:10px;color:var(--text-muted);}
@@ -228,7 +228,7 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
   <div class="hdr">
     <div class="logo">
       <span class="logo-mark">BriefBoard</span>
-      <span class="logo-sub">業界ニュース</span>
+      <span class="logo-sub">Your pick, your news.</span>
     </div>
     <div class="hdr-right">
       <div class="lang-toggle">
@@ -243,7 +243,10 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
 <div class="ctrl-wrap">
   <div class="ctrl-grid">
     <div class="panel">
-      <div class="panel-lbl">▸ 監視キーワード</div>
+      <div class="panel-lbl" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>▸ 監視キーワード</span>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:0;text-transform:none;font-weight:normal;">スペース区切り＝AND　／区切り＝OR</span>
+      </div>
       <div class="kw-row">
         <input class="kw-input" id="kwInput" placeholder="例: トヨタ、EV、半導体..." onkeydown="if(event.key==='Enter')addKw()">
         <button class="btn-add" onclick="addKw()">+ 追加</button>
@@ -445,8 +448,12 @@ function parseRSSXML(xml) {
   if (!items.length) throw new Error('no items in xml');
   return items.map(item => {
     const titleRaw = item.querySelector('title')?.textContent?.trim() || '';
-    const linkEl   = item.querySelector('link');
-    const guid     = item.querySelector('guid')?.textContent?.trim() || '';
+    // Google News RSS: タイトルの末尾「 - メディア名」を分割
+    const dash = titleRaw.lastIndexOf(' - ');
+    const title  = dash > 0 ? titleRaw.slice(0, dash) : titleRaw;
+    const source = dash > 0 ? titleRaw.slice(dash + 3) : (item.querySelector('source')?.textContent?.trim() || '');
+    const linkEl = item.querySelector('link');
+    const guid   = item.querySelector('guid')?.textContent?.trim() || '';
     const link = safeUrl(linkEl?.getAttribute('href'))
               || safeUrl(linkEl?.textContent?.trim())
               || safeUrl(guid)
@@ -454,7 +461,7 @@ function parseRSSXML(xml) {
     const pubDate = item.querySelector('pubDate')?.textContent?.trim()
                  || item.querySelector('updated')?.textContent?.trim()
                  || item.querySelector('published')?.textContent?.trim() || '';
-    return { title: titleRaw, link, pubDate };
+    return { title, source, link, pubDate };
   }).filter(i => i.title && i.link);
 }
 
@@ -516,7 +523,7 @@ function renderTags() {
   const el = document.getElementById('tagArea');
   el.innerHTML = keywords.length === 0
     ? '<span class="no-tags">追加したキーワードが1列ずつ並びます</span>'
-    : keywords.map(w=>`<div class="tag">${esc(w)}<button class="tag-x" title="過去記事を検索" onclick="fillArchive('${escAttr(w)}')" style="background:none;border:none;cursor:pointer;font-size:10px;color:var(--accent2);padding:0 2px;margin-left:2px;">📚</button><button class="tag-x" onclick="removeKw('${escAttr(w)}')">×</button></div>`).join('');
+    : keywords.map(w=>`<div class="tag">${esc(w)}<button class="tag-x" onclick="removeKw('${escAttr(w)}')">×</button></div>`).join('');
 }
 
 
@@ -571,10 +578,27 @@ async function fetchByKeyword(kw, idx) {
   body.innerHTML = `<div class="col-empty"><div class="col-empty-icon">📡</div><div class="col-empty-txt">「${esc(kw)}」を検索中...</div></div>`;
   if (countEl) countEl.textContent = '取得中...';
 
-  const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(kw)}&hl=en&gl=US&ceid=US:en`;
+  // スラッシュ区切りをOR検索（Google News: "A OR B"）、スペースはAND
+  const orTerms = kw.split('/').map(t => t.trim()).filter(Boolean);
+  const query = orTerms.length > 1 ? orTerms.join(' OR ') : kw;
+  const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=en&gl=US&ceid=US:en`;
   let items = null;
 
   const proxies = [
+    // ① allorigins — 制限なし・メイン
+    async () => {
+      const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`, {signal: AbortSignal.timeout(10000)});
+      const d = await r.json();
+      const items = parseRSSXML(d.contents || '');
+      return items.map(i => ({...i, source: i.source||'Google News', flag:'📰'}));
+    },
+    // ② corsproxy.io — 制限なし・サブ
+    async () => {
+      const r = await fetch(`https://corsproxy.io/?${encodeURIComponent(rssUrl)}`, {signal: AbortSignal.timeout(10000)});
+      const items = parseRSSXML(await r.text());
+      return items.map(i => ({...i, source: i.source||'Google News', flag:'📰'}));
+    },
+    // ③ rss2json — 150req/日/IP・最終手段
     async () => {
       const r = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}&count=100`, {signal: AbortSignal.timeout(10000)});
       const d = await r.json();
@@ -591,15 +615,6 @@ async function fetchByKeyword(kw, idx) {
         };
       }).filter(i => i.title && i.link);
     },
-    async () => {
-      const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`, {signal: AbortSignal.timeout(10000)});
-      const d = await r.json();
-      return parseRSSXML(d.contents || '').map(i => ({...i, source: i.source||'Google News', flag:'📰'}));
-    },
-    async () => {
-      const r = await fetch(`https://corsproxy.io/?${encodeURIComponent(rssUrl)}`, {signal: AbortSignal.timeout(10000)});
-      return parseRSSXML(await r.text()).map(i => ({...i, source: i.source||'Google News', flag:'📰'}));
-    },
   ];
 
   for (const fn of proxies) {
@@ -610,7 +625,7 @@ async function fetchByKeyword(kw, idx) {
   }
 
   if (!items || !items.length) {
-    body.innerHTML = `<div class="col-empty"><div class="col-empty-icon">🔍</div><div class="col-empty-txt">「${esc(kw)}」の記事が見つかりません<br><span style="font-size:10px;color:var(--text-dim)">📰ボタンでGoogle Newsを検索できます</span></div>`;
+    body.innerHTML = `<div class="col-empty"><div class="col-empty-icon">🔍</div><div class="col-empty-txt">「${esc(kw)}」の記事が見つかりません</div>`;
     if (countEl) countEl.textContent = '0 件';
     return;
   }
@@ -648,17 +663,7 @@ function buildCol(kw, articles, idx) {
   btnR.disabled = idx === keywords.length - 1;
   btnR.addEventListener('click', e => { e.stopPropagation(); moveCol(idx, +1); });
 
-  // Google News検索ボタン
-  const gnBtn = document.createElement('button');
-  gnBtn.title = 'Google Newsで過去記事を検索';
-  gnBtn.textContent = '📰';
-  gnBtn.style.cssText = 'background:none;border:none;cursor:pointer;font-size:13px;padding:2px 4px;opacity:0.6;transition:opacity 0.15s;flex-shrink:0;';
-  gnBtn.addEventListener('mouseenter', () => gnBtn.style.opacity = '1');
-  gnBtn.addEventListener('mouseleave', () => gnBtn.style.opacity = '0.6');
-  gnBtn.addEventListener('click', e => {
-    e.stopPropagation();
-    window.open(`https://news.google.com/search?q=${encodeURIComponent(kw)}&hl=ja`, '_blank');
-  });
+
 
   const countSpan = document.createElement('span');
   countSpan.className = 'col-count';
@@ -673,7 +678,6 @@ function buildCol(kw, articles, idx) {
 
   const rightRow = document.createElement('div');
   rightRow.style.cssText = 'display:flex;align-items:center;gap:4px;flex-shrink:0;';
-  rightRow.appendChild(gnBtn);
   rightRow.appendChild(countSpan);
 
   head.appendChild(kwRow);
@@ -717,8 +721,8 @@ function renderArticleCards(body, articles, idx, kw) {
     empty.className = 'col-empty';
     const noRss = cachedItems.length === 0;
     empty.innerHTML = noRss
-      ? `<div class="col-empty-icon">📡</div><div class="col-empty-txt">RSSを取得中…<br>または取得できませんでした<br><br><span style="font-size:10px;opacity:0.7">↻ 更新 ボタンを押すか<br>📰 ボタンでGoogle Newsを開けます</span></div>`
-      : `<div class="col-empty-icon">🔍</div><div class="col-empty-txt">「${esc(kw)}」の記事が見つかりません<br><span style="font-size:10px;color:var(--text-dim)">📰ボタンでGoogle Newsを検索できます</span></div>`;
+      ? `<div class="col-empty-icon">📡</div><div class="col-empty-txt">RSSを取得中…<br>または取得できませんでした<br><br><span style="font-size:10px;opacity:0.7">↻ 更新ボタンを押してください</span></div>`
+      : `<div class="col-empty-icon">🔍</div><div class="col-empty-txt">「${esc(kw)}」の記事が見つかりません</div>`;
     body.appendChild(empty);
     return;
   }
@@ -750,18 +754,7 @@ function renderArticleCards(body, articles, idx, kw) {
       translateTitle(a.link, a.title, currentLang, titleEl);
     }
 
-    // 翻訳ボタン
-    const actions = document.createElement('div');
-    actions.className = 'n-actions';
-    const transBtn = document.createElement('button');
-    transBtn.className = 'n-trans-btn';
-    transBtn.textContent = '🌐 Google翻訳で開く';
-    transBtn.addEventListener('click', e => {
-      e.stopPropagation();
-      window.open('https://translate.google.com/translate?sl=auto&tl=ja&u=' + encodeURIComponent(a.link), '_blank');
-    });
-    actions.appendChild(transBtn);
-    card.appendChild(actions);
+
     body.appendChild(card);
   });
 }

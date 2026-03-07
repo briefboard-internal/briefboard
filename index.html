@@ -130,38 +130,37 @@ header{border-bottom:1px solid var(--border);padding:12px 0;position:sticky;top:
 .cols-title{font-family:var(--serif);font-size:18px;font-weight:700;letter-spacing:-0.5px;}
 .cols-info{font-family:var(--mono);font-size:10px;color:var(--text-muted);}
 
-/* Desktop & Mobile: horizontal scroll */
-/* スクロールバー専用の薄いdiv（上段） */
-.cols-scrollbar-top{
-  overflow-x:scroll;
-  overflow-y:hidden;
-  height:16px;
-  margin-bottom:8px;
+/* ── 横スクロールエリア（スクロールバー上部表示） ── */
+.cols-grid-outer{
+  overflow-x:auto;
+  overflow-y:visible;
+  /* 上下反転でスクロールバーを上に */
+  transform:rotateX(180deg);
+  -webkit-transform:rotateX(180deg);
+  /* スクロールバーをテーマカラーに */
   scrollbar-width:thin;
   scrollbar-color:var(--border2) var(--surface2);
+  padding-bottom:2px;
 }
-.cols-scrollbar-top::-webkit-scrollbar{height:10px;}
-.cols-scrollbar-top::-webkit-scrollbar-track{background:var(--surface2);border-radius:5px;}
-.cols-scrollbar-top::-webkit-scrollbar-thumb{background:var(--border2);border-radius:5px;}
-.cols-scrollbar-top::-webkit-scrollbar-thumb:hover{background:var(--accent2);}
-.cols-scrollbar-top-inner{height:1px;display:block;min-width:100px;}
-/* カード本体（下段）*/
+.cols-grid-outer::-webkit-scrollbar{height:8px;}
+.cols-grid-outer::-webkit-scrollbar-track{background:var(--surface2);border-radius:4px;}
+.cols-grid-outer::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
+.cols-grid-outer::-webkit-scrollbar-thumb:hover{background:var(--accent2);}
 .columns-grid{
   display:flex;
   flex-direction:row;
   gap:12px;
-  overflow-x:auto;
-  padding-bottom:4px;
+  padding:4px 0 12px;
   -webkit-overflow-scrolling:touch;
-  scroll-snap-type:x proximity;
   align-items:start;
-  scrollbar-width:none;
-  -ms-overflow-style:none;
+  /* 再反転して正常表示 */
+  transform:rotateX(180deg);
+  -webkit-transform:rotateX(180deg);
 }
-.columns-grid::-webkit-scrollbar{display:none;}
 @media(max-width:600px){
-  .cols-scrollbar-top{display:none;}
-  .columns-grid{gap:10px;padding-bottom:12px;padding-top:0;}
+  .cols-grid-outer{transform:none;-webkit-transform:none;scrollbar-width:none;}
+  .cols-grid-outer::-webkit-scrollbar{display:none;}
+  .columns-grid{transform:none;-webkit-transform:none;gap:10px;padding:4px 0 12px;}
 }
 
 /* スクロールバーをPCでも目立つように */
@@ -188,7 +187,7 @@ header{border-bottom:1px solid var(--border);padding:12px 0;position:sticky;top:
 .col-body::-webkit-scrollbar-track{background:transparent;}
 .col-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
 .col-body::-webkit-scrollbar-thumb:hover{background:var(--accent2);}
-@media(max-width:600px){.col-body{max-height:none;overflow-y:visible;}}
+@media(max-width:600px){.col-body{max-height:70vh;overflow-y:auto;}}
 
 /* ── NEWS CARD ── */
 .n-card{padding:13px 14px;border-bottom:1px solid var(--border);text-decoration:none;display:block;position:relative;transition:background 0.12s;-webkit-tap-highlight-color:transparent;}
@@ -290,21 +289,7 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
 
 
 
-/* ── カスタム横スライダー ── */
-.cols-slider-wrap{
-  height:16px;background:var(--surface2);border-radius:8px;
-  margin-bottom:12px;cursor:pointer;position:relative;
-  touch-action:none;
-}
-.cols-slider-thumb{
-  position:absolute;top:3px;height:10px;
-  min-width:40px;background:var(--border2);border-radius:5px;
-  cursor:grab;user-select:none;touch-action:none;
-  transition:background 0.15s;
-}
-.cols-slider-thumb:hover{background:var(--accent2);}
-.cols-slider-thumb.active{background:var(--accent2);cursor:grabbing;}
-@media(max-width:600px){.cols-slider-wrap{display:none;}}
+
 </style>
 </head>
 <body>
@@ -385,11 +370,7 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
 <div class="cols-wrap">
   <div class="err-banner" id="errBanner"></div>
   <div class="cols-info" id="colsInfo" style="font-family:var(--mono);font-size:10px;color:var(--text-muted);padding:8px 0 4px;"></div>
-  <div class="cols-slider-wrap" id="colsSliderWrap">
-    <div class="cols-slider-track" id="colsSliderTrack"></div>
-    <div class="cols-slider-thumb" id="colsSliderThumb"></div>
-  </div>
-  <div class="columns-grid" id="colsGrid"></div>
+  <div class="cols-grid-outer"><div class="columns-grid" id="colsGrid"></div></div>
 </div>
 </div><!-- main-content -->
 </div><!-- app-layout -->
@@ -1010,90 +991,6 @@ function toggleSidebar(){
 
 
 
-
-// ── カスタム横スライダー ──
-(function(){
-  var wrap  = document.getElementById('colsSliderWrap');
-  var thumb = document.getElementById('colsSliderThumb');
-  var grid  = document.getElementById('colsGrid');
-  if(!wrap || !thumb || !grid){ return; }
-
-  function updateThumb(){
-    var sw = grid.scrollWidth;
-    var cw = grid.clientWidth;
-    var ww = wrap.getBoundingClientRect().width;
-    if(ww < 10) return; // まだレイアウト未確定
-    if(sw <= cw + 4){
-      thumb.style.display = 'none';
-      return;
-    }
-    thumb.style.display = 'block';
-    var tw = Math.max(44, Math.floor(ww * cw / sw));
-    var maxL = ww - tw;
-    var sl = grid.scrollLeft;
-    var left = maxL > 0 ? Math.floor((sl / (sw - cw)) * maxL) : 0;
-    thumb.style.width = tw + 'px';
-    thumb.style.left  = Math.min(left, maxL) + 'px';
-  }
-
-  // grid スクロール → サム位置
-  grid.addEventListener('scroll', updateThumb, {passive:true});
-
-  // ドラッグ（pointerCapture）
-  var active=false, ox=0, ol=0;
-
-  thumb.addEventListener('pointerdown', function(e){
-    active = true;
-    ox = e.clientX;
-    ol = parseFloat(thumb.style.left)||0;
-    thumb.setPointerCapture(e.pointerId);
-    thumb.style.background='var(--accent2)';
-    e.preventDefault();
-    e.stopPropagation();
-  });
-
-  thumb.addEventListener('pointermove', function(e){
-    if(!active) return;
-    var ww   = wrap.getBoundingClientRect().width;
-    var tw   = thumb.getBoundingClientRect().width;
-    var maxL = ww - tw;
-    var nl   = Math.min(Math.max(0, ol + (e.clientX - ox)), maxL);
-    thumb.style.left = nl + 'px';
-    var sc = grid.scrollWidth - grid.clientWidth;
-    grid.scrollLeft = maxL > 0 ? (nl / maxL) * sc : 0;
-  });
-
-  function end(){ active=false; thumb.style.background=''; }
-  thumb.addEventListener('pointerup', end);
-  thumb.addEventListener('pointercancel', end);
-  thumb.addEventListener('lostpointercapture', end);
-
-  // track クリックでジャンプ
-  wrap.addEventListener('pointerdown', function(e){
-    if(e.target===thumb) return;
-    var rect = wrap.getBoundingClientRect();
-    var tw   = thumb.getBoundingClientRect().width;
-    var ww   = rect.width;
-    var maxL = ww - tw;
-    var nl   = Math.min(Math.max(0, e.clientX - rect.left - tw/2), maxL);
-    var sc   = grid.scrollWidth - grid.clientWidth;
-    grid.scrollLeft = maxL > 0 ? (nl / maxL) * sc : 0;
-    thumb.style.left = nl + 'px';
-  });
-
-  // カード追加・サイズ変化を監視
-  new MutationObserver(function(){
-    requestAnimationFrame(updateThumb);
-  }).observe(grid, {childList:true, subtree:false});
-
-  new ResizeObserver(function(){
-    requestAnimationFrame(updateThumb);
-  }).observe(grid);
-
-  // 定期更新（念のため）
-  setInterval(function(){ requestAnimationFrame(updateThumb); }, 500);
-  requestAnimationFrame(updateThumb);
-})();
 
 </script>
 </body>

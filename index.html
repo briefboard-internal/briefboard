@@ -317,6 +317,17 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
 @media(max-width:768px){
   .scroll-top-btn{display:flex;}
 }
+
+/* ── URLシェアボタン ── */
+.btn-share{
+  width:100%;padding:8px;margin-top:6px;
+  background:none;border:1px solid var(--border2);
+  color:var(--text-muted);font-family:var(--mono);font-size:10px;
+  letter-spacing:1px;border-radius:3px;cursor:pointer;
+  transition:all 0.2s;text-align:center;
+}
+.btn-share:hover{border-color:var(--accent);color:var(--accent);}
+.btn-share.copied{border-color:var(--accent2);color:var(--accent2);}
 </style>
 </head>
 <body>
@@ -362,6 +373,7 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
       <div class="tags" id="tagArea">
         <span class="no-tags">キーワードを追加</span>
       </div>
+      <button class="btn-share" id="btnShare" onclick="copyShareUrl()">🔗 このキーワードのURLをコピー</button>
     </div>
 
     <!-- 過去記事・動向検索 -->
@@ -661,6 +673,16 @@ const translateCache = {};
 //  INIT
 // ══════════════════════════════════════════════
 function init() {
+  // URLパラメータからキーワードを読み込む
+  const params = new URLSearchParams(location.search);
+  const kwParam = params.get('kw');
+  if (kwParam) {
+    const incoming = kwParam.split(',').map(k=>k.trim()).filter(Boolean);
+    if (incoming.length > 0) {
+      keywords = incoming.slice(0, 20);
+      localStorage.setItem('bb_kw', JSON.stringify(keywords));
+    }
+  }
   document.getElementById('langOrig').classList.toggle('on', currentLang==='orig');
   document.getElementById('langJa').classList.toggle('on', currentLang==='ja');
   document.getElementById('langEn').classList.toggle('on', currentLang==='en');
@@ -1106,6 +1128,29 @@ function toggleArchiveSp(){
   // 常に表示（スマホでは常時見える）
   btn.style.display = 'flex';
 })();
+
+
+// ── URLシェア ──
+function copyShareUrl() {
+  const url = new URL(location.href);
+  url.search = '';
+  if (keywords.length > 0) {
+    url.searchParams.set('kw', keywords.join(','));
+  }
+  navigator.clipboard.writeText(url.toString()).then(function(){
+    const btn = document.getElementById('btnShare');
+    const orig = btn.textContent;
+    btn.textContent = '✓ コピーしました';
+    btn.classList.add('copied');
+    setTimeout(function(){ btn.textContent = orig; btn.classList.remove('copied'); }, 2000);
+  }).catch(function(){
+    // clipboardが使えない場合はpromptで表示
+    const url2 = new URL(location.href);
+    url2.search = '';
+    if (keywords.length > 0) url2.searchParams.set('kw', keywords.join(','));
+    prompt('このURLをコピーしてください:', url2.toString());
+  });
+}
 
 </script>
 </body>

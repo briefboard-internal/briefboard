@@ -311,13 +311,11 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
 
 <footer>
   <div class="ft">
-    <div class="ft-txt" id="ftTxt"><span class="live-dot"></span>自動更新: 6:00 / 9:00 / 12:00 / 15:00 / 18:00</div>
+    <div class="ft-txt" id="ftTxt"><span class="live-dot"></span>自動更新: 6:00 / 11:00 / 16:00</div>
     <div class="pills">
       <div class="pill" id="p6">06:00</div>
-      <div class="pill" id="p9">09:00</div>
-      <div class="pill" id="p12">12:00</div>
-      <div class="pill" id="p15">15:00</div>
-      <div class="pill" id="p18">18:00</div>
+      <div class="pill" id="p11">11:00</div>
+      <div class="pill" id="p16">16:00</div>
     </div>
   </div>
 </footer>
@@ -1123,7 +1121,7 @@ function relTime(d){
 }
 function setFooterUpdated(){
   const t=new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-  document.getElementById('ftTxt').innerHTML=`<span class="live-dot"></span>最終更新 <span style="color:var(--accent2)">${t}</span> &nbsp;|&nbsp; 自動更新: 6:00 / 9:00 / 12:00 / 15:00 / 18:00`;
+  document.getElementById('ftTxt').innerHTML=`<span class="live-dot"></span>最終更新 <span style="color:var(--accent2)">${t}</span> &nbsp;|&nbsp; 自動更新: 6:00 / 11:00 / 16:00`;
 }
 
 // ══════════════════════════════════════════════
@@ -1133,18 +1131,18 @@ function scheduleUpdates(){
   if(schedTimer)clearTimeout(schedTimer);
   const now=new Date(),midnight=new Date(now);midnight.setHours(0,0,0,0);
   let ms=null;
-  for(const h of [6,9,12,15,18]){const t=midnight.getTime()+h*3600000;if(t>now.getTime()){ms=t-now.getTime();break;}}
+  for(const h of [6,11,16]){const t=midnight.getTime()+h*3600000;if(t>now.getTime()){ms=t-now.getTime();break;}}
   if(!ms){const tom=new Date(midnight);tom.setDate(tom.getDate()+1);tom.setHours(6,0,0,0);ms=tom.getTime()-now.getTime();}
   schedTimer=setTimeout(()=>{loadAll();scheduleUpdates();},ms);
 }
 function updateClock(){
   const now=new Date(),h=now.getHours(),m=now.getMinutes();
-  ['p6','p9','p12','p15','p18'].forEach(id=>document.getElementById(id)?.classList.remove('on'));
+  ['p6','p11','p16'].forEach(id=>document.getElementById(id)?.classList.remove('on'));
   let next=null;
-  for(const t of [6,9,12,15,18]){if(t*60>h*60+m){next=t;break;}}
+  for(const t of [6,11,16]){if(t*60>h*60+m){next=t;break;}}
   if(!next)next=6;
   document.getElementById(`p${next}`)?.classList.add('on');
-  document.getElementById('nextTime').textContent=`${String(next).padStart(2,'0')}:00${next===6&&h>=18?' (翌日)':''}`;
+  document.getElementById('nextTime').textContent=`${String(next).padStart(2,'0')}:00${next===6&&h>=16?' (翌日)':''}`;
 }
 setInterval(updateClock,60000);
 init();

@@ -96,7 +96,7 @@ header{border-bottom:1px solid var(--border);padding:12px 0;position:sticky;top:
   flex-direction:row;
   gap:12px;
   overflow-x:auto;
-  padding-bottom:16px;
+  padding-bottom:4px;
   -webkit-overflow-scrolling:touch;
   scroll-snap-type:x proximity;
   align-items:start;
@@ -104,6 +104,21 @@ header{border-bottom:1px solid var(--border);padding:12px 0;position:sticky;top:
   -ms-overflow-style:none;
 }
 .columns-grid::-webkit-scrollbar{display:none;}
+/* 上部スクロールバー専用レール */
+.cols-scrollbar{
+  overflow-x:scroll;
+  overflow-y:hidden;
+  height:12px;
+  margin-bottom:10px;
+  scrollbar-width:thin;
+  scrollbar-color:var(--border2) var(--surface2);
+}
+.cols-scrollbar::-webkit-scrollbar{height:8px;}
+.cols-scrollbar::-webkit-scrollbar-track{background:var(--surface2);border-radius:4px;}
+.cols-scrollbar::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
+.cols-scrollbar::-webkit-scrollbar-thumb:hover{background:var(--accent2);}
+.cols-scrollbar-inner{height:1px;}
+@media(max-width:600px){.cols-scrollbar{display:none;}}
 /* スクロールバーをPCでも目立つように */
 
 /* 上部ミラースクロールバー */
@@ -230,36 +245,7 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
 .archive-body.open{display:block;}
 /* カード内過去検索ボタン */
 
-/* ── 左右ナビゲーションボタン ── */
-.cols-nav-wrap{position:relative;display:flex;align-items:flex-start;gap:0;}
-.nav-btn{
-  flex-shrink:0;
-  position:sticky;
-  top:calc(50vh - 22px);
-  z-index:50;
-  width:40px;height:40px;
-  border-radius:50%;
-  border:none;
-  background:rgba(20,20,30,0.82);
-  backdrop-filter:blur(10px);
-  color:var(--text);
-  font-size:17px;
-  cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-  box-shadow:0 2px 14px rgba(0,0,0,0.55);
-  -webkit-tap-highlight-color:transparent;
-  transition:background 0.2s, color 0.2s, opacity 0.2s;
-  align-self:flex-start;
-  margin-top:4px;
-}
-.nav-btn:hover{background:rgba(226,201,126,0.28);color:var(--accent);}
-.nav-btn:active{opacity:0.7;}
-.nav-btn.nav-left{margin-right:6px;}
-.nav-btn.nav-right{margin-left:6px;}
-.nav-btn:disabled{opacity:0.13;pointer-events:none;}
-@media(max-width:600px){
-  .nav-btn{width:34px;height:34px;font-size:14px;}
-}
+
 </style>
 </head>
 <body>
@@ -334,11 +320,8 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
     </div>
     <div class="swipe-hint" id="swipeHint">← 横にスクロールで全列表示 →</div>
   </div>
-  <div class="cols-nav-wrap">
-    <button class="nav-btn nav-left" id="navLeft" onclick="scrollCols(-1)" aria-label="左へスクロール">&#9664;</button>
-    <div class="columns-grid" id="colsGrid"></div>
-    <button class="nav-btn nav-right" id="navRight" onclick="scrollCols(1)" aria-label="右へスクロール">&#9654;</button>
-  </div>
+  <div class="cols-scrollbar" id="colsScrollbar"><div class="cols-scrollbar-inner" id="colsScrollbarInner"></div></div>
+  <div class="columns-grid" id="colsGrid"></div>
 </div>
 
 <footer>
@@ -937,32 +920,25 @@ function relTime(d){
 
 init();
 
-// ── 左右ナビゲーション ──
-function scrollCols(dir) {
-  const grid = document.getElementById('colsGrid');
-  const step = 320;
-  grid.scrollBy({left: dir * step, behavior: 'smooth'});
-  setTimeout(updateNavBtns, 350);
-}
+// ── 上部スクロールバー同期 ──
+(function(){
+  const grid  = document.getElementById('colsGrid');
+  const bar   = document.getElementById('colsScrollbar');
+  const inner = document.getElementById('colsScrollbarInner');
 
-function updateNavBtns() {
-  const grid = document.getElementById('colsGrid');
-  const btnL = document.getElementById('navLeft');
-  const btnR = document.getElementById('navRight');
-  if (!grid || !btnL || !btnR) return;
-  const atLeft  = grid.scrollLeft <= 4;
-  const atRight = grid.scrollLeft + grid.clientWidth >= grid.scrollWidth - 4;
-  // 複数列ある時だけ有効
-  const hasMultiple = grid.scrollWidth > grid.clientWidth + 8;
-  btnL.disabled = atLeft || !hasMultiple;
-  btnR.disabled = atRight || !hasMultiple;
-}
+  function syncWidth(){
+    inner.style.width = grid.scrollWidth + 'px';
+  }
+  // grid → bar
+  grid.addEventListener('scroll', () => { bar.scrollLeft = grid.scrollLeft; });
+  // bar → grid
+  bar.addEventListener('scroll', () => { grid.scrollLeft = bar.scrollLeft; });
 
-// ナビボタンは常時表示（sticky で位置固定）
+  new ResizeObserver(syncWidth).observe(grid);
+  syncWidth();
+})();
 
-document.getElementById('colsGrid').addEventListener('scroll', updateNavBtns);
-updateNavBtns();
-new ResizeObserver(() => { updateNavBtns(); }).observe(document.getElementById('colsGrid'));
+
 
 
 </script>

@@ -230,6 +230,11 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
       <span class="logo-sub">業界ニュース</span>
     </div>
     <div class="hdr-right">
+      <div class="lang-toggle">
+        <button class="lang-btn on" id="langOrig" onclick="setLang('orig')">原文</button>
+        <button class="lang-btn" id="langJa" onclick="setLang('ja')">日本語</button>
+        <button class="lang-btn" id="langEn" onclick="setLang('en')">English</button>
+      </div>
       <button class="btn-refresh" id="refreshBtn" onclick="loadAll()">↻ 更新</button>
     </div>
   </div>
@@ -462,7 +467,9 @@ let keywords    = JSON.parse(localStorage.getItem('bb_kw')  || '[]');
 let activeSrcs  = JSON.parse(localStorage.getItem('bb_src') || JSON.stringify(ALL_SOURCES.map(s=>s.id)));
 let cachedItems = [];
 let errorCount  = 0;
-const gnewsCache = {};   // kw -> filtered articles[]
+const gnewsCache = {};
+let currentLang = localStorage.getItem('bb_lang') || 'orig';
+const translateCache = {};
 
 
 
@@ -470,6 +477,9 @@ const gnewsCache = {};   // kw -> filtered articles[]
 //  INIT
 // ══════════════════════════════════════════════
 function init() {
+  document.getElementById('langOrig').classList.toggle('on', currentLang==='orig');
+  document.getElementById('langJa').classList.toggle('on', currentLang==='ja');
+  document.getElementById('langEn').classList.toggle('on', currentLang==='en');
   renderTags();
   loadAll();
   updateSwipeHint();
@@ -552,6 +562,7 @@ function renderColumns() {
     grid.innerHTML = '<div style="color:var(--text-dim);font-size:13px;padding:40px 20px;">← キーワードを追加すると列が表示されます</div>';
     return;
   }
+  // RSSが全滅でも列（ヘッダー＋空カード）は表示する
 
   info.textContent = `${keywords.length} 列 / ${cachedItems.length} 件取得`;
   keywords.forEach((kw, i) => {
@@ -663,7 +674,10 @@ function renderArticleCards(body, articles, idx, kw) {
   if (!articles.length) {
     const empty = document.createElement('div');
     empty.className = 'col-empty';
-    empty.innerHTML = `<div class="col-empty-icon">🔍</div><div class="col-empty-txt">「${esc(kw)}」の記事が見つかりません<br><span style="font-size:10px;color:var(--text-dim)">📰ボタンでGoogle Newsを検索できます</span></div>`;
+    const noRss = cachedItems.length === 0;
+    empty.innerHTML = noRss
+      ? `<div class="col-empty-icon">📡</div><div class="col-empty-txt">RSSを取得中…<br>または取得できませんでした<br><br><span style="font-size:10px;opacity:0.7">↻ 更新 ボタンを押すか<br>📰 ボタンでGoogle Newsを開けます</span></div>`
+      : `<div class="col-empty-icon">🔍</div><div class="col-empty-txt">「${esc(kw)}」の記事が見つかりません<br><span style="font-size:10px;color:var(--text-dim)">📰ボタンでGoogle Newsを検索できます</span></div>`;
     body.appendChild(empty);
     return;
   }
@@ -677,6 +691,8 @@ function renderArticleCards(body, articles, idx, kw) {
     let domain = '';
     try { domain = new URL(a.link).hostname.replace(/^www\./,''); } catch(e) {}
 
+    card.setAttribute('data-link', a.link||'');
+    card.setAttribute('data-orig', a.title||'');
     card.innerHTML = `
       <div class="n-meta">
         <span class="n-src">${esc(a.source||'')}</span>
@@ -686,6 +702,12 @@ function renderArticleCards(body, articles, idx, kw) {
       </div>
       <div class="n-title">${esc(a.title)}</div>
       <div class="n-credit">出典: <span class="n-credit-src">${esc(a.source||'')}</span>${domain ? ` &nbsp;|&nbsp; <span class="n-credit-domain">${esc(domain)}</span>` : ''}</div>`;
+
+    // 現在の言語モードに応じて翻訳
+    if (currentLang !== 'orig' && a.link) {
+      const titleEl = card.querySelector('.n-title');
+      translateTitle(a.link, a.title, currentLang, titleEl);
+    }
 
     // 翻訳ボタン
     const actions = document.createElement('div');
@@ -705,6 +727,55 @@ function renderArticleCards(body, articles, idx, kw) {
 
 
 
+
+
+// ══════════════════════════════════════════════
+//  LANGUAGE TOGGLE
+// ══════════════════════════════════════════════
+let translateCache = {};  // link -> ja/en translated title
+
+function setLang(lang) {
+  currentLang = lang;
+  localStorage.setItem('bb_lang', lang);
+  document.getElementById('langOrig').classList.toggle('on', lang === 'orig');
+  document.getElementById('langJa').classList.toggle('on',   lang === 'ja');
+  document.getElementById('langEn').classList.toggle('on',   lang === 'en');
+  // 全カードのタイトルを更新
+  document.querySelectorAll('.n-card[data-link]').forEach(card => {
+    const link = card.getAttribute('data-link');
+    const origTitle = card.getAttribute('data-orig');
+    const titleEl = card.querySelector('.n-title');
+    if (!titleEl) return;
+    if (lang === 'orig') {
+      titleEl.textContent = origTitle;
+    } else if (translateCache[link + '|' + lang]) {
+      titleEl.textContent = translateCache[link + '|' + lang];
+    } else {
+      titleEl.setAttribute('data-pending', lang);
+      translateTitle(link, origTitle, lang, titleEl);
+    }
+  });
+}
+
+async function translateTitle(link, title, lang, el) {
+  const cacheKey = link + '|' + lang;
+  if (translateCache[cacheKey]) { el.textContent = translateCache[cacheKey]; return; }
+  el.style.opacity = '0.5';
+  try {
+    const tl = lang === 'ja' ? 'ja' : 'en';
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${tl}&dt=t&q=${encodeURIComponent(title)}`;
+    const res = await fetch(url, {signal: AbortSignal.timeout(8000)});
+    const data = await res.json();
+    const translated = data?.[0]?.map(seg => seg?.[0] || '').join('') || title;
+    translateCache[cacheKey] = translated;
+    // まだ同じ言語モードなら反映
+    if (currentLang === lang) el.textContent = translated;
+  } catch(e) {
+    // 翻訳失敗時は原文を維持
+  } finally {
+    el.style.opacity = '';
+  }
+}
 
 // ══════════════════════════════════════════════
 //  UTILS

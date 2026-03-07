@@ -182,12 +182,12 @@ header{border-bottom:1px solid var(--border);padding:12px 0;position:sticky;top:
 .col-tab{font-family:var(--mono);font-size:9px;padding:2px 7px;border:1px solid var(--border);border-radius:20px;color:var(--text-dim);cursor:pointer;transition:all 0.15s;white-space:nowrap;user-select:none;}
 .col-tab.on{border-color:var(--accent);color:var(--accent);}
 .col-tab:hover:not(.on){border-color:var(--border2);color:var(--text-muted);}
-.col-body{display:flex;flex-direction:column;overflow-y:auto;max-height:calc((100vh - 220px) * 1.3);scrollbar-width:thin;scrollbar-color:var(--border2) transparent;}
+.col-body{display:flex;flex-direction:column;overflow-y:auto;max-height:calc((100vh - 220px) * 1.17);scrollbar-width:thin;scrollbar-color:var(--border2) transparent;}
 .col-body::-webkit-scrollbar{width:4px;}
 .col-body::-webkit-scrollbar-track{background:transparent;}
 .col-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
 .col-body::-webkit-scrollbar-thumb:hover{background:var(--accent2);}
-@media(max-width:600px){.col-body{max-height:70vh;overflow-y:auto;}}
+@media(max-width:600px){.col-body{max-height:63vh;overflow-y:auto;}}
 
 /* ── NEWS CARD ── */
 .n-card{padding:13px 14px;border-bottom:1px solid var(--border);text-decoration:none;display:block;position:relative;transition:background 0.12s;-webkit-tap-highlight-color:transparent;}
@@ -255,9 +255,7 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
 /* ── タブ ── */
 
 /* ── 出典クレジット ── */
-.n-credit{font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-top:5px;line-height:1.4;}
-.n-credit-src{color:var(--accent2);}
-.n-credit-domain{color:var(--text-dim);}
+
 .archive-wrap{padding:0 12px 12px;margin-top:14px;position:relative;z-index:1;}
 @media(max-width:600px){.archive-wrap{padding:0 8px 10px;margin-top:10px;}}
 .archive-panel{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:16px 18px;}
@@ -891,8 +889,7 @@ function renderArticleCards(body, articles, idx, kw) {
     card.style.animationDelay = `${idx * 55 + i * 35}ms`;
     if (a.link) card.addEventListener('click', () => window.open(a.link, '_blank'));
 
-    let domain = '';
-    try { domain = new URL(a.link).hostname.replace(/^www\./,''); } catch(e) {}
+
 
     card.setAttribute('data-link', a.link||'');
     card.setAttribute('data-orig', a.title||'');
@@ -903,8 +900,7 @@ function renderArticleCards(body, articles, idx, kw) {
         <span class="n-time">${relTime(a.pubDate)}</span>
         <span class="n-flag">${a.flag||''}</span>
       </div>
-      <div class="n-title">${esc(a.title)}</div>
-      <div class="n-credit">出典: <span class="n-credit-src">${esc(a.source||'')}</span>${domain ? ` &nbsp;|&nbsp; <span class="n-credit-domain">${esc(domain)}</span>` : ''}</div>`;
+      <div class="n-title">${esc(a.title)}</div>`;
 
     // 現在の言語モードに応じて翻訳
     if (currentLang !== 'orig' && a.link) {

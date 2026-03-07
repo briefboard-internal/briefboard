@@ -91,44 +91,49 @@ header{border-bottom:1px solid var(--border);padding:12px 0;position:sticky;top:
 .cols-info{font-family:var(--mono);font-size:10px;color:var(--text-muted);}
 
 /* Desktop & Mobile: horizontal scroll */
+.cols-scroll-wrap{
+  display:flex;
+  flex-direction:column;
+  gap:0;
+}
+/* スクロールバー専用の薄いdiv（上段） */
+.cols-scrollbar-top{
+  overflow-x:scroll;
+  overflow-y:hidden;
+  height:16px;
+  margin-bottom:8px;
+  scrollbar-width:thin;
+  scrollbar-color:var(--border2) var(--surface2);
+}
+.cols-scrollbar-top::-webkit-scrollbar{height:10px;}
+.cols-scrollbar-top::-webkit-scrollbar-track{background:var(--surface2);border-radius:5px;}
+.cols-scrollbar-top::-webkit-scrollbar-thumb{background:var(--border2);border-radius:5px;}
+.cols-scrollbar-top::-webkit-scrollbar-thumb:hover{background:var(--accent2);}
+.cols-scrollbar-top-inner{height:1px;display:block;min-width:100px;}
+/* カード本体（下段）*/
 .columns-grid{
   display:flex;
   flex-direction:row;
   gap:12px;
   overflow-x:auto;
-  padding-top:12px;
   padding-bottom:4px;
   -webkit-overflow-scrolling:touch;
+  scroll-snap-type:x proximity;
   align-items:start;
-  /* スクロールバーを上に出す */
-  transform:rotateX(180deg);
-  scrollbar-width:thin;
-  scrollbar-color:var(--border2) var(--surface2);
+  scrollbar-width:none;
+  -ms-overflow-style:none;
 }
-.columns-grid::-webkit-scrollbar{height:8px;}
-.columns-grid::-webkit-scrollbar-track{background:var(--surface2);border-radius:4px;}
-.columns-grid::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
-.columns-grid::-webkit-scrollbar-thumb:hover{background:var(--accent2);}
-/* 子要素を再反転して正常表示 */
-.columns-grid > .col{
-  transform:rotateX(180deg);
-}
+.columns-grid::-webkit-scrollbar{display:none;}
 @media(max-width:600px){
-  .columns-grid{
-    transform:none;
-    scrollbar-width:none;
-  }
-  .columns-grid::-webkit-scrollbar{display:none;}
-  .columns-grid > .col{transform:none;}
+  .cols-scrollbar-top{display:none;}
+  .columns-grid{gap:10px;padding-bottom:12px;padding-top:0;}
 }
 
 /* スクロールバーをPCでも目立つように */
 
 /* 上部ミラースクロールバー */
 
-@media(max-width:600px){
-  .columns-grid{gap:10px;padding-bottom:12px;padding-top:0;}
-}
+
 
 /* ── COLUMN ── */
 .col{background:var(--surface);border:1px solid var(--border);border-radius:6px;overflow:visible;animation:colIn 0.3s ease both;flex-shrink:0;width:300px;scroll-snap-align:start;}
@@ -323,7 +328,10 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
     </div>
     <div class="swipe-hint" id="swipeHint">← 横にスクロールで全列表示 →</div>
   </div>
-  <div class="columns-grid" id="colsGrid"></div>
+  <div class="cols-scroll-wrap">
+    <div class="cols-scrollbar-top" id="colsScrollbarTop"><div class="cols-scrollbar-top-inner" id="colsScrollbarInner"></div></div>
+    <div class="columns-grid" id="colsGrid"></div>
+  </div>
 </div>
 
 <footer>
@@ -922,6 +930,42 @@ function relTime(d){
 }
 
 init();
+
+// ── 上部スクロールバー同期 ──
+(function(){
+  const grid  = document.getElementById('colsGrid');
+  const bar   = document.getElementById('colsScrollbarTop');
+  const inner = document.getElementById('colsScrollbarInner');
+  let syncing = false;
+
+  function updateWidth(){
+    const w = grid.scrollWidth;
+    if(w > 0) inner.style.width = w + 'px';
+  }
+  function onGridScroll(){
+    if(syncing) return; syncing = true;
+    bar.scrollLeft = grid.scrollLeft;
+    syncing = false;
+  }
+  function onBarScroll(){
+    if(syncing) return; syncing = true;
+    grid.scrollLeft = bar.scrollLeft;
+    syncing = false;
+  }
+  grid.addEventListener('scroll', onGridScroll);
+  bar.addEventListener('scroll', onBarScroll);
+
+  // カード追加のたびに幅を再計算
+  new MutationObserver(() => {
+    requestAnimationFrame(updateWidth);
+  }).observe(grid, {childList:true});
+
+  // 念のため定期ポーリング（500ms）
+  setInterval(updateWidth, 500);
+
+  // 初期実行（DOMContentLoaded後）
+  requestAnimationFrame(updateWidth);
+})();
 
 
 

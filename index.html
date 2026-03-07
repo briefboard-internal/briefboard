@@ -113,19 +113,20 @@ header{border-bottom:1px solid var(--border);padding:12px 0;position:sticky;top:
 }
 
 /* ── COLUMN ── */
-.col{background:var(--surface);border:1px solid var(--border);border-radius:6px;overflow:hidden;animation:colIn 0.3s ease both;flex-shrink:0;width:300px;scroll-snap-align:start;}
+.col{background:var(--surface);border:1px solid var(--border);border-radius:6px;overflow:visible;animation:colIn 0.3s ease both;flex-shrink:0;width:300px;scroll-snap-align:start;}
 @media(max-width:600px){
   .col{width:calc(100vw - 24px);max-width:380px;}
   .cols-wrap{padding:10px 8px 40px;}
 }
 @keyframes colIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
-.col-head{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:9px 10px;border-bottom:1px solid var(--border);background:var(--surface2);}
+.col-head{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:9px 10px;border-bottom:1px solid var(--border);background:var(--surface2);position:sticky;top:0;z-index:10;border-radius:6px 6px 0 0;}
 .col-kw{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--accent);letter-spacing:0.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100px;}
 .col-count{font-family:var(--mono);font-size:10px;color:var(--text-muted);}
 .col-tab{font-family:var(--mono);font-size:9px;padding:2px 7px;border:1px solid var(--border);border-radius:20px;color:var(--text-dim);cursor:pointer;transition:all 0.15s;white-space:nowrap;user-select:none;}
 .col-tab.on{border-color:var(--accent);color:var(--accent);}
 .col-tab:hover:not(.on){border-color:var(--border2);color:var(--text-muted);}
-.col-body{display:flex;flex-direction:column;}
+.col-body{display:flex;flex-direction:column;overflow-y:auto;max-height:calc(100vh - 260px);}
+@media(max-width:600px){.col-body{max-height:none;overflow-y:visible;}}
 
 /* ── NEWS CARD ── */
 .n-card{padding:13px 14px;border-bottom:1px solid var(--border);text-decoration:none;display:block;position:relative;transition:background 0.12s;-webkit-tap-highlight-color:transparent;}
@@ -957,27 +958,20 @@ function updateNavBtns() {
   btnR.disabled = atRight || !hasMultiple;
 }
 
-// ニュースエリアが画面に入ったらボタンを表示、出たら非表示
+// colsGrid が画面に入ったらボタンを表示
 (function() {
-  const colsWrap = document.querySelector('.cols-wrap');
-  const btnL = document.getElementById('navLeft');
-  const btnR = document.getElementById('navRight');
+  const target = document.getElementById('colsGrid');
+  const btnL   = document.getElementById('navLeft');
+  const btnR   = document.getElementById('navRight');
+
+  const show = () => { btnL.classList.add('visible'); btnR.classList.add('visible'); updateNavBtns(); };
+  const hide = () => { btnL.classList.remove('visible'); btnR.classList.remove('visible'); };
 
   const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        btnL.classList.add('visible');
-        btnR.classList.add('visible');
-      } else {
-        btnL.classList.remove('visible');
-        btnR.classList.remove('visible');
-      }
-    });
-  }, {
-    threshold: 0.05  // 5%見えたら表示
-  });
+    entries[0].isIntersecting ? show() : hide();
+  }, { threshold: 0.01 });
 
-  observer.observe(colsWrap);
+  observer.observe(target);
 })();
 
 document.getElementById('colsGrid').addEventListener('scroll', updateNavBtns);

@@ -606,9 +606,18 @@ function init() {
 // ══════════════════════════════════════════════
 function addKw() {
   const el = document.getElementById('kwInput');
-  el.value.split(/[,、,\s　]+/).map(w=>w.trim()).filter(Boolean).forEach(w=>{
-    if (!keywords.includes(w)) keywords.push(w);
+  // カンマ・読点のみで分割（スペースはAND検索として単語内に保持）
+  const words = el.value.split(/[,、,]+/).map(w => w.trim()).filter(Boolean);
+  let added = 0;
+  words.forEach(w => {
+    if (keywords.length >= 20) return;
+    if (!keywords.includes(w)) { keywords.push(w); added++; }
   });
+  if (keywords.length >= 20 && added === 0 && words.length > 0) {
+    alert('キーワードは最大20個までです。');
+  } else if (keywords.length >= 20 && words.some(w => !keywords.includes(w))) {
+    alert('上限20個に達しました。');
+  }
   el.value = '';
   localStorage.setItem('bb_kw', JSON.stringify(keywords));
   renderTags();
@@ -727,10 +736,14 @@ function renderColumns() {
 
   info.textContent = `${keywords.length} 列 / ${cachedItems.length} 件取得`;
   keywords.forEach((kw, i) => {
-    const als = getAliases(kw);
+    // スペースで分割してAND検索（全単語を含む記事のみ）
+    const terms = kw.split(/\s+/).filter(Boolean);
     const matched = cachedItems.filter(a => {
-      const hay = a.title.toLowerCase();
-      return als.some(al => hay.includes(al.toLowerCase()));
+      const hay = (a.title + ' ' + (a.source || '')).toLowerCase();
+      return terms.every(term => {
+        const aliases = getAliases(term);
+        return aliases.some(al => hay.includes(al.toLowerCase()));
+      });
     });
     const col = buildCol(kw, matched, i);
     col.style.animationDelay = `${i * 55}ms`;
@@ -884,10 +897,13 @@ async function showTab(tab, kw, idx) {
   if (!body) return;
 
   if (tab === 'live') {
-    const aliases = getAliases(kw);
+    const terms = kw.split(/\s+/).filter(Boolean);
     const matched = cachedItems.filter(item => {
       const hay = (item.title + ' ' + (item.source || '')).toLowerCase();
-      return aliases.some(al => hay.includes(al.toLowerCase()));
+      return terms.every(term => {
+        const aliases = getAliases(term);
+        return aliases.some(al => hay.includes(al.toLowerCase()));
+      });
     });
     document.getElementById(`col-count-${idx}`).textContent = matched.length + ' 件';
     renderLiveArticles(body, [...matched].sort((a,b) => new Date(b.pubDate||0)-new Date(a.pubDate||0)), idx, kw);

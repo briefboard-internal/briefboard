@@ -386,7 +386,7 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
   align-items:center;justify-content:space-between;cursor:pointer;
   user-select:none;text-transform:uppercase;
 }
-.src-panel-title span{color:var(--accent2);font-size:10px;}
+.src-panel-title span{color:#888;font-size:10px;}
 .src-panel-title:hover{color:var(--text);}
 .src-group{margin-bottom:10px;margin-top:8px;}
 .src-group-label{font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:0.5px;margin-bottom:4px;text-transform:uppercase;}
@@ -394,11 +394,13 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
 .src-item input[type=checkbox]{
   width:12px;height:12px;cursor:pointer;accent-color:var(--accent);flex-shrink:0;
 }
-.src-item label{
-  font-family:var(--mono);font-size:10px;color:var(--text-muted);
-  cursor:pointer;line-height:1.3;
-}
-.src-item input:checked + label{color:var(--text);}
+.src-item label{cursor:pointer;line-height:1.3;}
+.src-name{display:block;font-family:var(--mono);font-size:10px;color:var(--text-muted);}
+.src-item input:checked + label .src-name{color:var(--text);}
+.src-desc{display:block;font-family:var(--mono);font-size:9px;color:var(--text-dim);
+  letter-spacing:0;text-transform:none;margin-top:1px;line-height:1.4;}
+
+.src-desc{color:#555;font-size:9px;}
 .src-apply{
   width:100%;padding:7px;margin-top:4px;
   background:var(--accent);color:#0c0c0f;
@@ -407,6 +409,28 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
   transition:opacity 0.2s;
 }
 .src-apply:hover{opacity:0.85;}
+
+/* ── 統一パネルトグル ── */
+.panel-header{
+  display:flex;align-items:center;justify-content:space-between;
+  cursor:pointer;user-select:none;margin-bottom:0;
+  font-family:var(--mono);font-size:10px;color:var(--text-muted);
+  letter-spacing:2px;text-transform:uppercase;
+}
+.panel-header:hover{color:var(--text);}
+.panel-toggle{
+  font-size:9px;color:#666;
+  transition:transform 0.2s;
+  flex-shrink:0;
+}
+.panel-body{margin-top:10px;}
+.panel-body.collapsed{display:none;}
+.panel-note{
+  font-family:var(--mono);font-size:9px;color:#555;
+  letter-spacing:0;text-transform:none;font-weight:normal;
+  margin-top:3px;margin-bottom:8px;
+  line-height:1.5;
+}
 </style>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -448,28 +472,33 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
 
     <!-- 監視キーワード -->
     <div class="panel">
-      <div class="panel-lbl" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;">
+      <div class="panel-header" onclick="togglePanel('kwBody','kwArrow')">
         <span>検索キーワード</span>
-        <span style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:0;text-transform:none;font-weight:normal;">スペース（␣）＝AND　　スラッシュ（／）＝OR</span>
+        <span class="panel-toggle" id="kwArrow">▼</span>
       </div>
-      <div class="kw-row">
-        <input class="kw-input" id="kwInput" placeholder="例: トヨタ, EV..." onkeydown="if(event.key==='Enter')addKw()">
-        <button class="btn-add" onclick="addKw()">+</button>
+      <div class="panel-body" id="kwBody">
+        <div class="panel-note">最大10個 ／ スペース＝AND　スラッシュ＝OR</div>
+        <div class="kw-row">
+          <input class="kw-input" id="kwInput" placeholder="例: トヨタ, EV..." onkeydown="if(event.key==='Enter')addKw()">
+          <button class="btn-add" onclick="addKw()">+</button>
+        </div>
+        <div class="tags" id="tagArea">
+          <span class="no-tags">キーワードを追加</span>
+        </div>
+        <button class="btn-share" id="btnShare" onclick="copyShareUrl()">🔗 このキーワードのURLをコピー</button>
+        <button class="btn-reset-read" onclick="resetRead()">↺ 既読をリセット</button>
+        <button class="btn-a2hs" id="btnA2hs" onclick="a2hsTap()">📲 ホーム画面に追加</button>
       </div>
-      <div class="tags" id="tagArea">
-        <span class="no-tags">キーワードを追加</span>
-      </div>
-      <button class="btn-share" id="btnShare" onclick="copyShareUrl()">🔗 このキーワードのURLをコピー</button>
-      <button class="btn-reset-read" onclick="resetRead()">↺ 既読をリセット</button>
-      <button class="btn-a2hs" id="btnA2hs" onclick="a2hsTap()">📲 ホーム画面に追加</button>
     </div>
 
     <!-- ソース設定 -->
     <div class="panel src-panel" id="srcPanel">
-      <div class="src-panel-title" onclick="toggleSrcPanel()">
-        ソース設定 <span id="srcPanelArrow">▼</span>
+      <div class="panel-header" onclick="togglePanel('srcPanelBody','srcPanelArrow')">
+        <span>ソース設定</span>
+        <span class="panel-toggle" id="srcPanelArrow">▼</span>
       </div>
-      <div id="srcPanelBody" style="display:none;">
+      <div class="panel-body collapsed" id="srcPanelBody">
+        <div class="panel-note">最大3つまで選択できます</div>
         <div id="srcGroupsContainer"></div>
         <button class="src-apply" onclick="applySrcSettings()">✓ 適用して更新</button>
       </div>
@@ -477,11 +506,11 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
 
     <!-- 過去記事・動向検索 -->
     <div class="panel archive-panel-inline">
-      <div class="panel-lbl" style="display:flex;align-items:center;justify-content:space-between;">
+      <div class="panel-header" onclick="togglePanel('archiveBody','archArrow')">
         <span>ニュース横断検索</span>
-        <button class="archive-toggle-sp" id="archToggleSp" onclick="toggleArchiveSp()">▲</button>
+        <span class="panel-toggle" id="archArrow">▼</span>
       </div>
-      <div class="archive-body" id="archiveBody">
+      <div class="panel-body collapsed" id="archiveBody">
         <p class="archive-desc">Google News・Bloomberg・Reuters等の過去記事を横断検索。</p>
         <div class="archive-row">
           <input class="archive-input" id="archInput" placeholder="キーワード..." onkeydown="if(event.key==='Enter')runArchive()">
@@ -649,43 +678,43 @@ const SOURCE_GROUPS = [
   {
     label: '🔍 Google News',
     sources: [
-      { id:'gnews_ja', name:'Google News 日本語', type:'gnews', lang:'ja', gl:'JP', ceid:'JP:ja' },
-      { id:'gnews_en', name:'Google News 英語',   type:'gnews', lang:'en', gl:'US', ceid:'US:en' },
+      { id:'gnews_ja', name:'Google News 日本語', desc:'日本語の最新ニュース', type:'gnews', lang:'ja', gl:'JP', ceid:'JP:ja' },
+      { id:'gnews_en', name:'Google News 英語',   desc:'英語の最新ニュース',   type:'gnews', lang:'en', gl:'US', ceid:'US:en' },
     ]
   },
   {
     label: '🎓 学術・研究',
     sources: [
-      { id:'scholar',  name:'Google Scholar',    type:'scholar' },
+      { id:'scholar', name:'Google Scholar', desc:'論文・研究レポート', type:'scholar' },
     ]
   },
   {
     label: '🇯🇵 日本語メディア',
     sources: [
-      { id:'nhk',       name:'NHK 経済',       type:'rss', flag:'🇯🇵', url:'https://www.nhk.or.jp/rss/news/cat4.xml' },
-      { id:'bestcar',   name:'ベストカーweb',   type:'rss', flag:'🇯🇵', url:'https://bestcarweb.jp/feed' },
-      { id:'toyo',      name:'東洋経済',        type:'rss', flag:'🇯🇵', url:'https://toyokeizai.net/list/feed/rss' },
-      { id:'itmedia_n', name:'ITmedia NEWS',    type:'rss', flag:'🇯🇵', url:'https://rss.itmedia.co.jp/rss/2.0/news_bursts.xml' },
-      { id:'ascii',     name:'ASCII.jp',        type:'rss', flag:'🇯🇵', url:'https://ascii.jp/rss.xml' },
+      { id:'nhk',       name:'NHK 経済',      desc:'公共放送の経済ニュース', type:'rss', flag:'🇯🇵', url:'https://www.nhk.or.jp/rss/news/cat4.xml' },
+      { id:'bestcar',   name:'ベストカーweb', desc:'国内自動車専門誌',       type:'rss', flag:'🇯🇵', url:'https://bestcarweb.jp/feed' },
+      { id:'toyo',      name:'東洋経済',       desc:'ビジネス・産業情報',    type:'rss', flag:'🇯🇵', url:'https://toyokeizai.net/list/feed/rss' },
+      { id:'itmedia_n', name:'ITmedia NEWS',  desc:'IT・テック全般',        type:'rss', flag:'🇯🇵', url:'https://rss.itmedia.co.jp/rss/2.0/news_bursts.xml' },
+      { id:'ascii',     name:'ASCII.jp',      desc:'テック・デジタル',      type:'rss', flag:'🇯🇵', url:'https://ascii.jp/rss.xml' },
     ]
   },
   {
     label: '⚡ EV・電池（英語）',
     sources: [
-      { id:'electrek',     name:'Electrek',      type:'rss', flag:'⚡', url:'https://electrek.co/feed/' },
-      { id:'insideevs',    name:'InsideEVs',      type:'rss', flag:'⚡', url:'https://insideevs.com/rss/articles/all/' },
-      { id:'cleantechnica',name:'CleanTechnica',  type:'rss', flag:'🌿', url:'https://cleantechnica.com/feed/' },
-      { id:'caranddriver', name:'Car and Driver', type:'rss', flag:'🚗', url:'https://www.caranddriver.com/rss/all.xml/' },
-      { id:'wired',        name:'WIRED',          type:'rss', flag:'🔬', url:'https://www.wired.com/feed/rss' },
+      { id:'electrek',     name:'Electrek',      desc:'EV・再エネ専門',      type:'rss', flag:'⚡', url:'https://electrek.co/feed/' },
+      { id:'insideevs',    name:'InsideEVs',      desc:'EV業界特化',          type:'rss', flag:'⚡', url:'https://insideevs.com/rss/articles/all/' },
+      { id:'cleantechnica',name:'CleanTechnica',  desc:'クリーンエネルギー',  type:'rss', flag:'🌿', url:'https://cleantechnica.com/feed/' },
+      { id:'caranddriver', name:'Car and Driver', desc:'自動車レビュー・業界',type:'rss', flag:'🚗', url:'https://www.caranddriver.com/rss/all.xml/' },
+      { id:'wired',        name:'WIRED',          desc:'テック・イノベーション',type:'rss', flag:'🔬', url:'https://www.wired.com/feed/rss' },
     ]
   },
   {
     label: '🌐 総合ビジネス（英語）',
     sources: [
-      { id:'bbc',       name:'BBC Business',   type:'rss', flag:'🇬🇧', url:'https://feeds.bbci.co.uk/news/business/rss.xml' },
-      { id:'ft',        name:'Financial Times', type:'rss', flag:'🇬🇧', url:'https://www.ft.com/rss/home/uk' },
-      { id:'techcrunch',name:'TechCrunch',      type:'rss', flag:'🇺🇸', url:'https://techcrunch.com/feed/' },
-      { id:'verge',     name:'The Verge',       type:'rss', flag:'🇺🇸', url:'https://www.theverge.com/rss/index.xml' },
+      { id:'bbc',       name:'BBC Business',    desc:'英国公共放送の経済',    type:'rss', flag:'🇬🇧', url:'https://feeds.bbci.co.uk/news/business/rss.xml' },
+      { id:'ft',        name:'Financial Times', desc:'グローバル金融・経済',  type:'rss', flag:'🇬🇧', url:'https://www.ft.com/rss/home/uk' },
+      { id:'techcrunch',name:'TechCrunch',      desc:'スタートアップ・投資',  type:'rss', flag:'🇺🇸', url:'https://techcrunch.com/feed/' },
+      { id:'verge',     name:'The Verge',       desc:'テック・ガジェット',    type:'rss', flag:'🇺🇸', url:'https://www.theverge.com/rss/index.xml' },
     ]
   }
 ];
@@ -810,7 +839,7 @@ function init() {
   if (kwParam) {
     const incoming = kwParam.split(',').map(k=>k.trim()).filter(Boolean);
     if (incoming.length > 0) {
-      keywords = incoming.slice(0, 20);
+      keywords = incoming.slice(0, 10);
       localStorage.setItem('bb_kw', JSON.stringify(keywords));
     }
   }
@@ -832,13 +861,13 @@ function addKw() {
   const words = el.value.split(/[,、,]+/).map(w => w.trim()).filter(Boolean);
   let added = 0;
   words.forEach(w => {
-    if (keywords.length >= 20) return;
+    if (keywords.length >= 10) return;
     if (!keywords.includes(w)) { keywords.push(w); added++; }
   });
-  if (keywords.length >= 20 && added === 0 && words.length > 0) {
-    alert('キーワードは最大20個までです。');
-  } else if (keywords.length >= 20 && words.some(w => !keywords.includes(w))) {
-    alert('上限20個に達しました。');
+  if (keywords.length >= 10 && added === 0 && words.length > 0) {
+    alert('キーワードは最大10個までです。');
+  } else if (keywords.length >= 10 && words.some(w => !keywords.includes(w))) {
+    alert('上限10個に達しました。');
   }
   el.value = '';
   localStorage.setItem('bb_kw', JSON.stringify(keywords));
@@ -1437,8 +1466,9 @@ function renderSrcPanel() {
       <div class="src-group-label">${g.label}</div>
       ${g.sources.map(s => `
         <div class="src-item">
-          <input type="checkbox" id="src_${s.id}" ${activeSrcs.includes(s.id) ? 'checked' : ''}>
-          <label for="src_${s.id}">${s.name}</label>
+          <input type="checkbox" id="src_${s.id}" ${activeSrcs.includes(s.id) ? 'checked' : ''}
+            onchange="onSrcCheck(this,'${s.id}')">
+          <label for="src_${s.id}">${s.name}<span class="src-desc"> — ${s.desc||''}</span></label>
         </div>`).join('')}
     </div>`).join('');
 }
@@ -1463,6 +1493,29 @@ function applySrcSettings() {
   document.getElementById('srcPanelBody').style.display = 'none';
   document.getElementById('srcPanelArrow').textContent = '▼';
 }
+
+
+function onSrcCheck(el, id) {
+  const checked = SOURCE_GROUPS.flatMap(g => g.sources)
+    .filter(s => document.getElementById('src_' + s.id)?.checked);
+  if (checked.length > 3) {
+    el.checked = false;
+    alert('ソースは最大3つまでです。');
+  }
+}
+
+
+function togglePanel(bodyId, arrowId) {
+  const body  = document.getElementById(bodyId);
+  const arrow = document.getElementById(arrowId);
+  if (!body) return;
+  const isOpen = !body.classList.contains('collapsed');
+  body.classList.toggle('collapsed', isOpen);
+  if (arrow) arrow.textContent = isOpen ? '▼' : '▲';
+}
+// 後方互換
+function toggleSrcPanel(){ togglePanel('srcPanelBody','srcPanelArrow'); }
+function toggleArchiveSp(){ togglePanel('archiveBody','archArrow'); }
 
 </script>
 </body>

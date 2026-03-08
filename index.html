@@ -380,16 +380,16 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
 }
 
 /* ── ソース選択パネル ── */
-.src-panel{margin-top:10px;border-top:1px solid var(--border);padding-top:10px;}
 .src-panel-title{
   font-family:var(--mono);font-size:10px;letter-spacing:1px;
-  color:var(--text-muted);margin-bottom:8px;display:flex;
+  color:var(--text-muted);margin-bottom:0;display:flex;
   align-items:center;justify-content:space-between;cursor:pointer;
-  user-select:none;
+  user-select:none;text-transform:uppercase;
 }
-.src-panel-title span{color:var(--accent2);font-size:9px;}
-.src-group{margin-bottom:8px;}
-.src-group-label{font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:0.5px;margin-bottom:4px;}
+.src-panel-title span{color:var(--accent2);font-size:10px;}
+.src-panel-title:hover{color:var(--text);}
+.src-group{margin-bottom:10px;margin-top:8px;}
+.src-group-label{font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:0.5px;margin-bottom:4px;text-transform:uppercase;}
 .src-item{display:flex;align-items:center;gap:6px;padding:3px 0;cursor:pointer;}
 .src-item input[type=checkbox]{
   width:12px;height:12px;cursor:pointer;accent-color:var(--accent);flex-shrink:0;
@@ -400,7 +400,7 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
 }
 .src-item input:checked + label{color:var(--text);}
 .src-apply{
-  width:100%;padding:7px;margin-top:6px;
+  width:100%;padding:7px;margin-top:4px;
   background:var(--accent);color:#0c0c0f;
   border:none;font-family:var(--mono);font-size:10px;
   font-weight:600;letter-spacing:1px;border-radius:3px;cursor:pointer;
@@ -462,6 +462,17 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
       <button class="btn-share" id="btnShare" onclick="copyShareUrl()">🔗 このキーワードのURLをコピー</button>
       <button class="btn-reset-read" onclick="resetRead()">↺ 既読をリセット</button>
       <button class="btn-a2hs" id="btnA2hs" onclick="a2hsTap()">📲 ホーム画面に追加</button>
+    </div>
+
+    <!-- ソース設定 -->
+    <div class="panel src-panel" id="srcPanel">
+      <div class="src-panel-title" onclick="toggleSrcPanel()">
+        ソース設定 <span id="srcPanelArrow">▼</span>
+      </div>
+      <div id="srcPanelBody" style="display:none;">
+        <div id="srcGroupsContainer"></div>
+        <button class="src-apply" onclick="applySrcSettings()">✓ 適用して更新</button>
+      </div>
     </div>
 
     <!-- 過去記事・動向検索 -->

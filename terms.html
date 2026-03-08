@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>利用規約・免責事項 — BriefBoard</title>
+<meta name="robots" content="noindex">
+<style>
+  :root{
+    --bg:#0c0c0f; --surface:#13131a; --surface2:#1a1a24;
+    --border:#2a2a38; --border2:#353548;
+    --accent:#e2c97e; --accent2:#6fa882;
+    --text:#eae8e2; --text-muted:#72727f; --text-dim:#3e3e50;
+    --sans:'Inter','Hiragino Sans','Noto Sans JP',sans-serif;
+    --mono:'IBM Plex Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    background:var(--bg);color:var(--text);
+    font-family:var(--sans);min-height:100vh;
+    line-height:1.8;
+  }
+  body::before{
+    content:'';position:fixed;inset:0;
+    background-image:linear-gradient(var(--border) 1px,transparent 1px),
+                     linear-gradient(90deg,var(--border) 1px,transparent 1px);
+    background-size:48px 48px;opacity:0.15;pointer-events:none;z-index:0;
+  }
+
+  /* ── HEADER ── */
+  header{
+    border-bottom:1px solid var(--border);padding:12px 24px;
+    position:sticky;top:0;
+    background:rgba(12,12,15,0.96);backdrop-filter:blur(16px);z-index:200;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .logo{display:flex;flex-direction:column;gap:2px;text-decoration:none;}
+  .logo-mark{font-family:var(--mono);font-size:17px;font-weight:500;color:var(--accent);letter-spacing:-1px;}
+  .logo-sub{font-family:var(--mono);font-size:9px;color:var(--text-muted);letter-spacing:1px;}
+  .back-btn{
+    font-family:var(--mono);font-size:10px;color:var(--text-muted);
+    text-decoration:none;border:1px solid var(--border2);
+    padding:5px 12px;border-radius:3px;letter-spacing:1px;
+    text-transform:uppercase;transition:all 0.2s;
+  }
+  .back-btn:hover{color:var(--accent);border-color:var(--accent);}
+
+  /* ── MAIN ── */
+  main{
+    position:relative;z-index:1;
+    max-width:760px;margin:0 auto;
+    padding:48px 24px 80px;
+  }
+
+  .page-title{
+    font-family:var(--mono);font-size:11px;letter-spacing:3px;
+    text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;
+  }
+  .page-heading{
+    font-size:22px;font-weight:600;color:var(--accent);
+    margin-bottom:4px;letter-spacing:-0.3px;
+  }
+  .page-meta{
+    font-family:var(--mono);font-size:10px;color:var(--text-dim);
+    margin-bottom:40px;
+  }
+
+  /* ── SECTIONS ── */
+  .section{
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:6px;padding:24px 28px;margin-bottom:16px;
+  }
+  .section-title{
+    font-family:var(--mono);font-size:10px;letter-spacing:2px;
+    text-transform:uppercase;color:var(--accent2);
+    margin-bottom:14px;display:flex;align-items:center;gap:8px;
+  }
+  .section-title::after{
+    content:'';flex:1;height:1px;background:var(--border);
+  }
+  .section p{
+    font-size:13px;color:var(--text-muted);margin-bottom:10px;line-height:1.9;
+  }
+  .section p:last-child{margin-bottom:0;}
+  .section a{color:var(--accent);text-decoration:none;}
+  .section a:hover{text-decoration:underline;}
+
+  /* ── SOURCE TABLE ── */
+  .src-table{width:100%;border-collapse:collapse;margin-top:10px;}
+  .src-table th{
+    font-family:var(--mono);font-size:9px;letter-spacing:1px;
+    text-transform:uppercase;color:var(--text-dim);
+    padding:6px 10px;border-bottom:1px solid var(--border);
+    text-align:left;font-weight:normal;
+  }
+  .src-table td{
+    font-size:12px;color:var(--text-muted);
+    padding:7px 10px;border-bottom:1px solid var(--border);
+    vertical-align:top;line-height:1.6;
+  }
+  .src-table tr:last-child td{border-bottom:none;}
+  .src-table td:first-child{color:var(--text);font-weight:500;white-space:nowrap;}
+
+  /* ── NOTICE BOX ── */
+  .notice{
+    background:rgba(226,201,126,0.06);border:1px solid rgba(226,201,126,0.25);
+    border-radius:4px;padding:14px 18px;margin-top:14px;
+    font-size:12px;color:var(--text-muted);line-height:1.8;
+  }
+  .notice strong{color:var(--accent);font-weight:600;}
+
+  /* ── FOOTER ── */
+  footer{
+    position:relative;z-index:1;
+    border-top:1px solid var(--border);
+    padding:16px 24px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .ft-txt{font-family:var(--mono);font-size:10px;color:var(--text-dim);}
+
+  @media(max-width:600px){
+    main{padding:32px 16px 60px;}
+    .section{padding:18px 16px;}
+    .src-table{font-size:11px;}
+    .src-table td:first-child{white-space:normal;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="index.html">
+    <span class="logo-mark">BriefBoard</span>
+    <span class="logo-sub">YOUR PICK, YOUR NEWS</span>
+  </a>
+  <a class="back-btn" href="index.html">← ホームへ戻る</a>
+</header>
+
+<main>
+  <div class="page-title">Legal</div>
+  <div class="page-heading">利用規約・免責事項</div>
+  <div class="page-meta">最終更新：2025年1月　／　BriefBoard</div>
+
+  <!-- 1. サービス概要 -->
+  <div class="section">
+    <div class="section-title">01 — サービス概要</div>
+    <p>BriefBoardは、各種メディアが公開しているRSSフィードおよびGoogle News RSSを利用して、ニュース見出しを収集・表示する情報集約ツールです。</p>
+    <p>本サービスは無償で提供されており、広告・課金要素はありません。</p>
+  </div>
+
+  <!-- 2. 著作権 -->
+  <div class="section">
+    <div class="section-title">02 — 著作権・コンテンツの帰属</div>
+    <p>本サービスに表示されるニュース見出し・記事情報の著作権は、それぞれの配信元メディアに帰属します。</p>
+    <p>本サービスは記事の見出しおよびリンクのみを表示し、記事本文の転載・複製は行っていません。各見出しをクリックすると、配信元メディアのウェブサイトへ直接遷移します。</p>
+    <div class="notice">
+      <strong>著作権に関するお問い合わせ：</strong><br>
+      配信元メディアによる見出し表示の中止要請があった場合は、速やかに対応いたします。ご連絡はサービス管理者までお願いします。
+    </div>
+  </div>
+
+  <!-- 3. 利用しているデータソース -->
+  <div class="section">
+    <div class="section-title">03 — 利用データソース</div>
+    <p>本サービスは以下のRSSフィードおよびAPIを利用しています。各サービスの利用規約に従い、見出し・リンクの表示のみを行っています。</p>
+    <table class="src-table">
+      <thead>
+        <tr>
+          <th>ソース</th>
+          <th>用途</th>
+          <th>規約・ポリシー</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Google News RSS</td>
+          <td>キーワード別ニュース取得</td>
+          <td><a href="https://policies.google.com/terms" target="_blank">Google利用規約</a></td>
+        </tr>
+        <tr>
+          <td>NHK / 東洋経済 / ITmedia 等</td>
+          <td>各メディアの公開RSSフィード</td>
+          <td>各メディアの利用規約に準拠</td>
+        </tr>
+        <tr>
+          <td>Electrek / InsideEVs 等</td>
+          <td>EV・電池分野の英語RSS</td>
+          <td>各メディアの利用規約に準拠</td>
+        </tr>
+        <tr>
+          <td>allorigins.win / corsproxy.io</td>
+          <td>CORSプロキシ（RSS取得補助）</td>
+          <td>各サービスの利用規約に準拠</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 4. 免責事項 -->
+  <div class="section">
+    <div class="section-title">04 — 免責事項</div>
+    <p>本サービスが提供する情報は、各配信元メディアのRSSフィードをもとに自動収集したものです。情報の正確性・完全性・最新性を保証するものではありません。</p>
+    <p>本サービスを利用したことによって生じたいかなる損害についても、サービス提供者は責任を負いません。</p>
+    <p>外部サービス（Google News・各RSSプロキシ等）の停止・変更・仕様変更により、一時的にニュースが取得できない場合があります。</p>
+  </div>
+
+  <!-- 5. プライバシー -->
+  <div class="section">
+    <div class="section-title">05 — プライバシー・データ管理</div>
+    <p>本サービスはサーバーサイドでユーザーデータを収集・保存しません。キーワード設定・既読履歴・ソース設定はすべてお使いのブラウザのlocalStorageにのみ保存されます。</p>
+    <p>本サービス自体に広告ネットワーク・トラッキングコードは含まれていません。</p>
+  </div>
+
+  <!-- 6. 変更・終了 -->
+  <div class="section">
+    <div class="section-title">06 — サービスの変更・終了</div>
+    <p>本サービスは予告なく内容の変更・一時停止・終了を行う場合があります。</p>
+    <p>本規約は必要に応じて更新されることがあります。更新後の規約はこのページに掲載します。</p>
+  </div>
+
+</main>
+
+<footer>
+  <div class="ft-txt">© BriefBoard — 著作権は各配信元メディアに帰属します</div>
+</footer>
+
+</body>
+</html>

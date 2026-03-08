@@ -725,8 +725,6 @@ let errorCount  = 0;
 const gnewsCache = {};
 // New表示用：前回ロード時に見たURLセット
 const prevSeenUrls = new Set(JSON.parse(localStorage.getItem('bb_prev_urls') || '[]'));
-// 重複排除用：今回のセッションで既に表示したURLセット
-const shownUrls = new Set();
 // 今回ロードしたURLを収集（セッション終了時に保存）
 const currUrls = new Set();
 let currentLang = localStorage.getItem('bb_lang') || 'orig';
@@ -994,6 +992,14 @@ function moveCol(idx, dir) {
 function renderHistArticles(body, articles, idx) {
   renderArticleCards(body, articles, idx, '');
 }
+function normalizeTitle(t) {
+  // 記号・空白・助詞を除いて比較用に正規化
+  return String(t||'').toLowerCase()
+    .replace(/[\s\u3000\u300c\u300d\u300e\u300f「」『』【】〜～・、。,.!?！？：:；;]/g, '')
+    .replace(/[aeiou]/g, '') // 英語の母音除去で表記ゆれ吸収
+    .slice(0, 30); // 先頭30文字で比較
+}
+
 function renderArticleCards(body, articles, idx, kw) {
   body.innerHTML = '';
   if (!articles.length) {
@@ -1006,11 +1012,12 @@ function renderArticleCards(body, articles, idx, kw) {
     body.appendChild(empty);
     return;
   }
-  // 重複排除フィルタ（同一セッション内で既に表示済みのURLをスキップ）
+  // 重複排除：同一列内でタイトルが似ている記事を除去
+  const seenTitles = new Set();
   const deduped = articles.filter(a => {
-    if (!a.link) return true;
-    if (shownUrls.has(a.link)) return false;
-    shownUrls.add(a.link);
+    const key = normalizeTitle(a.title);
+    if (seenTitles.has(key)) return false;
+    seenTitles.add(key);
     return true;
   });
   if (deduped.length === 0 && articles.length > 0) {

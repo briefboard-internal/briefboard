@@ -378,6 +378,35 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
   margin-left:6px;vertical-align:middle;
   letter-spacing:0.5px;flex-shrink:0;
 }
+
+/* ── ソース選択パネル ── */
+.src-panel{margin-top:10px;border-top:1px solid var(--border);padding-top:10px;}
+.src-panel-title{
+  font-family:var(--mono);font-size:10px;letter-spacing:1px;
+  color:var(--text-muted);margin-bottom:8px;display:flex;
+  align-items:center;justify-content:space-between;cursor:pointer;
+  user-select:none;
+}
+.src-panel-title span{color:var(--accent2);font-size:9px;}
+.src-group{margin-bottom:8px;}
+.src-group-label{font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:0.5px;margin-bottom:4px;}
+.src-item{display:flex;align-items:center;gap:6px;padding:3px 0;cursor:pointer;}
+.src-item input[type=checkbox]{
+  width:12px;height:12px;cursor:pointer;accent-color:var(--accent);flex-shrink:0;
+}
+.src-item label{
+  font-family:var(--mono);font-size:10px;color:var(--text-muted);
+  cursor:pointer;line-height:1.3;
+}
+.src-item input:checked + label{color:var(--text);}
+.src-apply{
+  width:100%;padding:7px;margin-top:6px;
+  background:var(--accent);color:#0c0c0f;
+  border:none;font-family:var(--mono);font-size:10px;
+  font-weight:600;letter-spacing:1px;border-radius:3px;cursor:pointer;
+  transition:opacity 0.2s;
+}
+.src-apply:hover{opacity:0.85;}
 </style>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -603,34 +632,49 @@ function getAliases(kw) {
 // ══════════════════════════════════════════════
 //  SOURCES
 // ══════════════════════════════════════════════
+// ── ニュースソース定義 ──
+// type: 'gnews' = Google News RSS検索, 'scholar' = Google Scholar, 'rss' = 固定RSS
 const SOURCE_GROUPS = [
   {
-    label: '🇯🇵 日本語',
+    label: '🔍 Google News',
     sources: [
-      { id:'nhk',       name:'NHK 経済',       flag:'🇯🇵', url:'https://www.nhk.or.jp/rss/news/cat4.xml' },
-      { id:'bestcar',   name:'ベストカーweb',   flag:'🇯🇵', url:'https://bestcarweb.jp/feed' },
-      { id:'toyo',      name:'東洋経済',         flag:'🇯🇵', url:'https://toyokeizai.net/list/feed/rss' },
-      { id:'itmedia_n', name:'ITmedia NEWS',   flag:'🇯🇵', url:'https://rss.itmedia.co.jp/rss/2.0/news_bursts.xml' },
-      { id:'ascii',     name:'ASCII.jp',       flag:'🇯🇵', url:'https://ascii.jp/rss.xml' },
+      { id:'gnews_ja', name:'Google News 日本語', type:'gnews', lang:'ja', gl:'JP', ceid:'JP:ja' },
+      { id:'gnews_en', name:'Google News 英語',   type:'gnews', lang:'en', gl:'US', ceid:'US:en' },
+    ]
+  },
+  {
+    label: '🎓 学術・研究',
+    sources: [
+      { id:'scholar',  name:'Google Scholar',    type:'scholar' },
+    ]
+  },
+  {
+    label: '🇯🇵 日本語メディア',
+    sources: [
+      { id:'nhk',       name:'NHK 経済',       type:'rss', flag:'🇯🇵', url:'https://www.nhk.or.jp/rss/news/cat4.xml' },
+      { id:'bestcar',   name:'ベストカーweb',   type:'rss', flag:'🇯🇵', url:'https://bestcarweb.jp/feed' },
+      { id:'toyo',      name:'東洋経済',        type:'rss', flag:'🇯🇵', url:'https://toyokeizai.net/list/feed/rss' },
+      { id:'itmedia_n', name:'ITmedia NEWS',    type:'rss', flag:'🇯🇵', url:'https://rss.itmedia.co.jp/rss/2.0/news_bursts.xml' },
+      { id:'ascii',     name:'ASCII.jp',        type:'rss', flag:'🇯🇵', url:'https://ascii.jp/rss.xml' },
     ]
   },
   {
     label: '⚡ EV・電池（英語）',
     sources: [
-      { id:'electrek',     name:'Electrek',      flag:'⚡', url:'https://electrek.co/feed/' },
-      { id:'insideevs',    name:'InsideEVs',      flag:'⚡', url:'https://insideevs.com/rss/articles/all/' },
-      { id:'cleantechnica',name:'CleanTechnica',  flag:'🌿', url:'https://cleantechnica.com/feed/' },
-      { id:'caranddriver', name:'Car and Driver', flag:'🚗', url:'https://www.caranddriver.com/rss/all.xml/' },
-      { id:'wired',        name:'WIRED',          flag:'🔬', url:'https://www.wired.com/feed/rss' },
+      { id:'electrek',     name:'Electrek',      type:'rss', flag:'⚡', url:'https://electrek.co/feed/' },
+      { id:'insideevs',    name:'InsideEVs',      type:'rss', flag:'⚡', url:'https://insideevs.com/rss/articles/all/' },
+      { id:'cleantechnica',name:'CleanTechnica',  type:'rss', flag:'🌿', url:'https://cleantechnica.com/feed/' },
+      { id:'caranddriver', name:'Car and Driver', type:'rss', flag:'🚗', url:'https://www.caranddriver.com/rss/all.xml/' },
+      { id:'wired',        name:'WIRED',          type:'rss', flag:'🔬', url:'https://www.wired.com/feed/rss' },
     ]
   },
   {
     label: '🌐 総合ビジネス（英語）',
     sources: [
-      { id:'bbc',       name:'BBC Business',   flag:'🇬🇧', url:'https://feeds.bbci.co.uk/news/business/rss.xml' },
-      { id:'ft',        name:'Financial Times',flag:'🇬🇧', url:'https://www.ft.com/rss/home/uk' },
-      { id:'techcrunch',name:'TechCrunch',     flag:'🇺🇸', url:'https://techcrunch.com/feed/' },
-      { id:'verge',     name:'The Verge',      flag:'🇺🇸', url:'https://www.theverge.com/rss/index.xml' },
+      { id:'bbc',       name:'BBC Business',   type:'rss', flag:'🇬🇧', url:'https://feeds.bbci.co.uk/news/business/rss.xml' },
+      { id:'ft',        name:'Financial Times', type:'rss', flag:'🇬🇧', url:'https://www.ft.com/rss/home/uk' },
+      { id:'techcrunch',name:'TechCrunch',      type:'rss', flag:'🇺🇸', url:'https://techcrunch.com/feed/' },
+      { id:'verge',     name:'The Verge',       type:'rss', flag:'🇺🇸', url:'https://www.theverge.com/rss/index.xml' },
     ]
   }
 ];
@@ -719,7 +763,7 @@ function parseRSSXML(xml) {
 //  STATE
 // ══════════════════════════════════════════════
 let keywords    = JSON.parse(localStorage.getItem('bb_kw')  || '[]');
-let activeSrcs  = JSON.parse(localStorage.getItem('bb_src') || JSON.stringify(ALL_SOURCES.map(s=>s.id)));
+let activeSrcs  = JSON.parse(localStorage.getItem('bb_src') || JSON.stringify(['gnews_ja','gnews_en']));
 let cachedItems = [];
 let errorCount  = 0;
 const gnewsCache = {};
@@ -837,71 +881,40 @@ function renderColumns() {
   });
 }
 
-// Google News RSS（キーワード検索）で過去記事を取得
+// 選択されたソースからキーワード記事を取得
 async function fetchByKeyword(kw, idx) {
-  const cacheKey = kw.toLowerCase();
+  const cacheKey = kw.toLowerCase() + '|' + activeSrcs.slice().sort().join(',');
   const body = document.getElementById(`col-body-${idx}`);
   const countEl = document.getElementById(`col-count-${idx}`);
   if (!body) return;
 
-  // キャッシュあれば即表示
   if (gnewsCache[cacheKey]) {
     renderArticleCards(body, gnewsCache[cacheKey], idx, kw);
     if (countEl) countEl.textContent = gnewsCache[cacheKey].length + ' 件';
     return;
   }
 
-  // ローディング表示
   body.innerHTML = `<div class="col-empty"><div class="col-empty-icon">📡</div><div class="col-empty-txt">「${esc(kw)}」を検索中...</div></div>`;
   if (countEl) countEl.textContent = '取得中...';
 
-  // スラッシュ区切りをOR検索（Google News: "A OR B"）、スペースはAND
+  // スラッシュ区切りをOR検索
   const orTerms = kw.split('/').map(t => t.trim()).filter(Boolean);
   const query = orTerms.length > 1 ? orTerms.join(' OR ') : kw;
-  const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=en&gl=US&ceid=US:en`;
-  let items = null;
 
-  const proxies = [
-    // ① allorigins — 制限なし・メイン
-    async () => {
-      const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`, {signal: AbortSignal.timeout(10000)});
-      const d = await r.json();
-      const items = parseRSSXML(d.contents || '');
-      return items.map(i => ({...i, source: i.source||'Google News', flag:'📰'}));
-    },
-    // ② corsproxy.io — 制限なし・サブ
-    async () => {
-      const r = await fetch(`https://corsproxy.io/?${encodeURIComponent(rssUrl)}`, {signal: AbortSignal.timeout(10000)});
-      const items = parseRSSXML(await r.text());
-      return items.map(i => ({...i, source: i.source||'Google News', flag:'📰'}));
-    },
-    // ③ rss2json — 150req/日/IP・最終手段
-    async () => {
-      const r = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}&count=100`, {signal: AbortSignal.timeout(10000)});
-      const d = await r.json();
-      if (!d.items?.length) throw new Error('empty');
-      return d.items.map(i => {
-        const titleRaw = i.title || '';
-        const dash = titleRaw.lastIndexOf(' - ');
-        return {
-          title:   dash > 0 ? titleRaw.slice(0, dash) : titleRaw,
-          link:    safeUrl(i.link) || safeUrl(i.guid) || '',
-          pubDate: i.pubDate || '',
-          source:  dash > 0 ? titleRaw.slice(dash+3) : (i.source?.name || 'Google News'),
-          flag:    '📰',
-        };
-      }).filter(i => i.title && i.link);
-    },
-  ];
-
-  for (const fn of proxies) {
-    try {
-      const result = await fn();
-      if (result && result.length > 0) { items = result; break; }
-    } catch(e) { continue; }
+  // 選択中のソースを取得
+  const selectedSources = ALL_SOURCES.filter(s => activeSrcs.includes(s.id));
+  if (!selectedSources.length) {
+    body.innerHTML = `<div class="col-empty"><div class="col-empty-icon">⚙️</div><div class="col-empty-txt">ソースが選択されていません</div></div>`;
+    if (countEl) countEl.textContent = '0 件';
+    return;
   }
 
-  if (!items || !items.length) {
+  // 各ソースから並列取得
+  const results = await Promise.allSettled(selectedSources.map(src => fetchFromSource(src, query)));
+  let items = [];
+  results.forEach(r => { if (r.status === 'fulfilled' && r.value?.length) items.push(...r.value); });
+
+  if (!items.length) {
     body.innerHTML = `<div class="col-empty"><div class="col-empty-icon">🔍</div><div class="col-empty-txt">「${esc(kw)}」の記事が見つかりません</div>`;
     if (countEl) countEl.textContent = '0 件';
     return;
@@ -912,7 +925,79 @@ async function fetchByKeyword(kw, idx) {
   renderArticleCards(body, items, idx, kw);
   if (countEl) countEl.textContent = items.length + ' 件';
   document.getElementById('ftTxt').innerHTML = `<span class="live-dot"></span>最終更新 <span style="color:var(--accent2)">${new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})}</span>`;
+}
 
+// ソースごとの取得ロジック
+async function fetchFromSource(src, query) {
+  if (src.type === 'gnews') {
+    const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=${src.lang}&gl=${src.gl}&ceid=${src.ceid}`;
+    const srcName = src.name;
+    const proxies = [
+      async () => {
+        const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`, {signal: AbortSignal.timeout(10000)});
+        const d = await r.json();
+        return parseRSSXML(d.contents || '').map(i => ({...i, source: i.source||srcName, flag:'📰'}));
+      },
+      async () => {
+        const r = await fetch(`https://corsproxy.io/?${encodeURIComponent(rssUrl)}`, {signal: AbortSignal.timeout(10000)});
+        return parseRSSXML(await r.text()).map(i => ({...i, source: i.source||srcName, flag:'📰'}));
+      },
+      async () => {
+        const r = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}&count=100`, {signal: AbortSignal.timeout(10000)});
+        const d = await r.json();
+        if (!d.items?.length) throw new Error('empty');
+        return d.items.map(i => {
+          const titleRaw = i.title || '';
+          const dash = titleRaw.lastIndexOf(' - ');
+          return {
+            title:   dash > 0 ? titleRaw.slice(0, dash) : titleRaw,
+            link:    safeUrl(i.link) || safeUrl(i.guid) || '',
+            pubDate: i.pubDate || '',
+            source:  dash > 0 ? titleRaw.slice(dash+3) : srcName,
+            flag:    '📰',
+          };
+        }).filter(i => i.title && i.link);
+      },
+    ];
+    for (const fn of proxies) {
+      try { const r = await fn(); if (r?.length) return r; } catch(e) { continue; }
+    }
+    return [];
+  }
+
+  if (src.type === 'scholar') {
+    // Google Scholar RSS
+    const scholarUrl = `https://scholar.google.com/scholar_alerts?update_op=create_alert&email_for_feed=&q=${encodeURIComponent(query)}&hl=ja&as_sdt=0%2C5`;
+    const rssUrl = `https://scholar.google.com/scholar?q=${encodeURIComponent(query)}&hl=ja&as_sdt=0%2C5&as_rr=1&output=rss`;
+    const proxies = [
+      async () => {
+        const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`, {signal: AbortSignal.timeout(10000)});
+        const d = await r.json();
+        return parseRSSXML(d.contents || '').map(i => ({...i, source: i.source||'Google Scholar', flag:'🎓'}));
+      },
+      async () => {
+        const r = await fetch(`https://corsproxy.io/?${encodeURIComponent(rssUrl)}`, {signal: AbortSignal.timeout(10000)});
+        return parseRSSXML(await r.text()).map(i => ({...i, source: i.source||'Google Scholar', flag:'🎓'}));
+      },
+    ];
+    for (const fn of proxies) {
+      try { const r = await fn(); if (r?.length) return r; } catch(e) { continue; }
+    }
+    return [];
+  }
+
+  if (src.type === 'rss') {
+    // 固定RSSはキーワードでフィルタ
+    try {
+      const items = await fetchRSS(src);
+      const kws = query.toLowerCase().split(/\s+OR\s+|\s+/);
+      return items.filter(item => {
+        const text = (item.title + ' ' + (item.description||'')).toLowerCase();
+        return kws.some(k => k && text.includes(k.toLowerCase()));
+      }).map(i => ({...i, source: i.source||src.name, flag: src.flag||'📰'}));
+    } catch(e) { return []; }
+  }
+  return [];
 }
 
 
@@ -993,11 +1078,43 @@ function renderHistArticles(body, articles, idx) {
   renderArticleCards(body, articles, idx, '');
 }
 function normalizeTitle(t) {
-  // 記号・空白・助詞を除いて比較用に正規化
-  return String(t||'').toLowerCase()
-    .replace(/[\s\u3000\u300c\u300d\u300e\u300f「」『』【】〜～・、。,.!?！？：:；;]/g, '')
-    .replace(/[aeiou]/g, '') // 英語の母音除去で表記ゆれ吸収
-    .slice(0, 30); // 先頭30文字で比較
+  return String(t||'')
+    .toLowerCase()
+    // 末尾の「 - 媒体名」を除去
+    .replace(/\s*[-–—]\s*[^-–—]{2,40}$/, '')
+    // 英語略語を展開（表記ゆれ対策）
+    .replace(/\bev\b/g, 'electricvehicle')
+    .replace(/\bbev\b/g, 'electricvehicle')
+    .replace(/\bphev\b/g, 'pluginhybrid')
+    .replace(/\bq([1-4])\b/g, 'quarter$1')
+    // 記号・空白を除去
+    .replace(/[\s\u3000\r\n\t「」『』【】〔〕（）()《》<>・、。,.!?！？：:；;'"'"""''\/\\|@#$%^&*+=~`]/g, '')
+    // ひらがな→カタカナ統一
+    .replace(/[\u3041-\u3096]/g, c => String.fromCharCode(c.charCodeAt(0) + 0x60))
+    // 英語母音除去
+    .replace(/[aeiou]/g, '')
+    // 全角数字→半角
+    .replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+    .slice(0, 45);
+}
+
+// 2つのタイトルが「実質同じ記事」かを判定
+function isSameArticle(t1, t2) {
+  const a = normalizeTitle(t1);
+  const b = normalizeTitle(t2);
+  if (!a || !b) return false;
+  if (a === b) return true;
+  // 一方が他方を含む（長い方の85%以上一致）
+  const shorter = a.length < b.length ? a : b;
+  const longer  = a.length < b.length ? b : a;
+  if (shorter.length >= 10 && longer.includes(shorter)) return true;
+  // 編集距離ベースの類似度（簡易版：共通文字数 / 最大長）
+  const minLen = Math.min(a.length, b.length);
+  if (minLen < 8) return false;
+  let common = 0;
+  const bChars = new Set(b.split(''));
+  for (const c of a) if (bChars.has(c)) common++;
+  return (common / Math.max(a.length, b.length)) >= 0.88;
 }
 
 function renderArticleCards(body, articles, idx, kw) {
@@ -1012,12 +1129,12 @@ function renderArticleCards(body, articles, idx, kw) {
     body.appendChild(empty);
     return;
   }
-  // 重複排除：同一列内でタイトルが似ている記事を除去
-  const seenTitles = new Set();
+  // 重複排除：同一列内でタイトルが実質同じ記事を除去
+  const seenTitles = [];
   const deduped = articles.filter(a => {
-    const key = normalizeTitle(a.title);
-    if (seenTitles.has(key)) return false;
-    seenTitles.add(key);
+    if (!a.title) return true;
+    if (seenTitles.some(t => isSameArticle(t, a.title))) return false;
+    seenTitles.push(a.title);
     return true;
   });
   if (deduped.length === 0 && articles.length > 0) {
@@ -1297,6 +1414,43 @@ function a2hsTap(){
   }
   // その他（Chrome等でまだpromptが来ていない場合）
   alert('ブラウザのメニューから「ホーム画面に追加」または「アプリをインストール」を選択してください。');
+}
+
+
+// ── ソース選択パネル ──
+function renderSrcPanel() {
+  const container = document.getElementById('srcGroupsContainer');
+  if (!container) return;
+  container.innerHTML = SOURCE_GROUPS.map(g => `
+    <div class="src-group">
+      <div class="src-group-label">${g.label}</div>
+      ${g.sources.map(s => `
+        <div class="src-item">
+          <input type="checkbox" id="src_${s.id}" ${activeSrcs.includes(s.id) ? 'checked' : ''}>
+          <label for="src_${s.id}">${s.name}</label>
+        </div>`).join('')}
+    </div>`).join('');
+}
+function toggleSrcPanel() {
+  const body = document.getElementById('srcPanelBody');
+  const arrow = document.getElementById('srcPanelArrow');
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : 'block';
+  arrow.textContent = isOpen ? '▼' : '▲';
+  if (!isOpen) renderSrcPanel();
+}
+function applySrcSettings() {
+  const checked = SOURCE_GROUPS.flatMap(g => g.sources)
+    .filter(s => document.getElementById('src_' + s.id)?.checked)
+    .map(s => s.id);
+  if (!checked.length) { alert('ソースを1つ以上選択してください'); return; }
+  activeSrcs = checked;
+  localStorage.setItem('bb_src', JSON.stringify(activeSrcs));
+  Object.keys(gnewsCache).forEach(k => delete gnewsCache[k]);
+  renderColumns();
+  // パネルを閉じる
+  document.getElementById('srcPanelBody').style.display = 'none';
+  document.getElementById('srcPanelArrow').textContent = '▼';
 }
 
 </script>

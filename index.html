@@ -368,6 +368,16 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
 }
 .btn-a2hs:hover{border-color:var(--accent);color:var(--accent);}
 @media(min-width:769px){.btn-a2hs{display:none;}}
+
+/* ── Newバッジ ── */
+.n-new{
+  display:inline-block;
+  font-size:9px;font-family:var(--mono);font-weight:700;
+  color:#0c0c0f;background:var(--accent);
+  padding:1px 5px;border-radius:2px;
+  margin-left:6px;vertical-align:middle;
+  letter-spacing:0.5px;flex-shrink:0;
+}
 </style>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -713,6 +723,12 @@ let activeSrcs  = JSON.parse(localStorage.getItem('bb_src') || JSON.stringify(AL
 let cachedItems = [];
 let errorCount  = 0;
 const gnewsCache = {};
+// New表示用：前回ロード時に見たURLセット
+const prevSeenUrls = new Set(JSON.parse(localStorage.getItem('bb_prev_urls') || '[]'));
+// 重複排除用：今回のセッションで既に表示したURLセット
+const shownUrls = new Set();
+// 今回ロードしたURLを収集（セッション終了時に保存）
+const currUrls = new Set();
 let currentLang = localStorage.getItem('bb_lang') || 'orig';
 // 既読URLセット（localStorageで永続化）
 const readSet = new Set(JSON.parse(localStorage.getItem('bb_read') || '[]'));
@@ -990,9 +1006,27 @@ function renderArticleCards(body, articles, idx, kw) {
     body.appendChild(empty);
     return;
   }
-  articles.forEach((a, i) => {
+  // 重複排除フィルタ（同一セッション内で既に表示済みのURLをスキップ）
+  const deduped = articles.filter(a => {
+    if (!a.link) return true;
+    if (shownUrls.has(a.link)) return false;
+    shownUrls.add(a.link);
+    return true;
+  });
+  if (deduped.length === 0 && articles.length > 0) {
+    const dup = document.createElement('div');
+    dup.className = 'col-empty';
+    dup.innerHTML = '<div class="col-empty-icon">🔁</div><div class="col-empty-txt">他の列と重複する記事のみでした</div>';
+    body.appendChild(dup);
+    return;
+  }
+  deduped.forEach((a, i) => {
+    // 今回取得したURLを収集
+    if (a.link) currUrls.add(a.link);
+
+    const isNew = a.link && !prevSeenUrls.has(a.link) && prevSeenUrls.size > 0;
     const card = document.createElement('div');
-    card.className = 'n-card';
+    card.className = 'n-card' + (readSet.has(a.link) ? ' read' : '');
     card.style.cursor = 'pointer';
     card.style.animationDelay = `${idx * 55 + i * 35}ms`;
     if (a.link) card.addEventListener('click', () => {
@@ -1000,8 +1034,6 @@ function renderArticleCards(body, articles, idx, kw) {
       card.classList.add('read');
       window.open(a.link, '_blank');
     });
-
-
 
     card.setAttribute('data-link', a.link||'');
     card.setAttribute('data-orig', a.title||'');
@@ -1011,6 +1043,7 @@ function renderArticleCards(body, articles, idx, kw) {
         <span class="n-dot"></span>
         <span class="n-time">${relTime(a.pubDate)}</span>
         <span class="n-flag">${a.flag||''}</span>
+        ${isNew ? '<span class="n-new">NEW</span>' : ''}
       </div>
       <div class="n-title">${esc(a.title)}</div>`;
 
@@ -1186,6 +1219,14 @@ function toggleArchiveSp(){
   btn.textContent = body.classList.contains('open') ? '▲' : '▼';
 }
 
+
+// ── セッション終了時にURLを保存 ──
+window.addEventListener('pagehide', function(){
+  if (currUrls.size > 0) {
+    const arr = Array.from(currUrls).slice(-500); // 最大500件
+    localStorage.setItem('bb_prev_urls', JSON.stringify(arr));
+  }
+});
 
 // ── トップへ戻るボタン（スマホ） ──
 (function(){

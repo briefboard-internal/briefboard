@@ -1512,6 +1512,8 @@ function togglePanel(bodyId, arrowId) {
   const isOpen = !body.classList.contains('collapsed');
   body.classList.toggle('collapsed', isOpen);
   if (arrow) arrow.textContent = isOpen ? '▼' : '▲';
+  // ソースパネルを開くとき選択肢を描画
+  if (bodyId === 'srcPanelBody' && isOpen === false) renderSrcPanel();
 }
 // 後方互換
 function toggleSrcPanel(){ togglePanel('srcPanelBody','srcPanelArrow'); }

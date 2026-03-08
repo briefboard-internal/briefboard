@@ -299,7 +299,7 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
 
 
 
-/* スマホのみ表示のGoogleニュース検索トグル */
+/* スマホのみ表示のニュース横断検索トグル */
 .archive-toggle-sp{display:none;background:none;border:none;color:var(--text-muted);font-size:11px;cursor:pointer;padding:2px 6px;transition:color 0.2s;}
 .archive-toggle-sp:hover{color:var(--accent);}
 @media(max-width:768px){.archive-toggle-sp{display:block;}}
@@ -357,37 +357,17 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
 .btn-reset-read:hover{border-color:var(--red);color:var(--red);}
 
 /* ── ホーム画面追加バナー ── */
-.a2hs-banner{
-  display:none;
-  position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
-  background:rgba(20,20,28,0.97);
-  border:1px solid var(--border2);
-  border-radius:10px;
-  padding:12px 16px;
-  z-index:9998;
-  box-shadow:0 4px 24px rgba(0,0,0,0.7);
-  backdrop-filter:blur(16px);
-  max-width:320px;width:calc(100vw - 40px);
-  font-family:var(--mono);
-  gap:10px;align-items:center;
+
+/* ── ホーム画面追加ボタン（スマホのみ） ── */
+.btn-a2hs{
+  width:100%;padding:7px;margin-top:4px;
+  background:none;border:1px solid var(--border2);
+  color:var(--text-muted);font-family:var(--mono);font-size:10px;
+  letter-spacing:1px;border-radius:3px;cursor:pointer;
+  transition:all 0.2s;text-align:center;
 }
-.a2hs-banner.show{display:flex;}
-.a2hs-icon{font-size:28px;flex-shrink:0;}
-.a2hs-body{flex:1;}
-.a2hs-title{font-size:12px;font-weight:600;color:var(--text);letter-spacing:0.5px;}
-.a2hs-desc{font-size:10px;color:var(--text-muted);margin-top:3px;line-height:1.5;}
-.a2hs-actions{display:flex;gap:8px;margin-top:8px;}
-.a2hs-btn-add{
-  padding:5px 12px;font-size:10px;font-family:var(--mono);
-  background:var(--accent);color:#0c0c0f;
-  border:none;border-radius:3px;cursor:pointer;font-weight:600;
-}
-.a2hs-btn-close{
-  padding:5px 10px;font-size:10px;font-family:var(--mono);
-  background:none;color:var(--text-muted);
-  border:1px solid var(--border);border-radius:3px;cursor:pointer;
-}
-@media(min-width:769px){.a2hs-banner{display:none!important;}}
+.btn-a2hs:hover{border-color:var(--accent);color:var(--accent);}
+@media(min-width:769px){.btn-a2hs{display:none;}}
 </style>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -398,18 +378,6 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
 </head>
 <body>
 
-
-<div class="a2hs-banner" id="a2hsBanner">
-  <div class="a2hs-icon">📲</div>
-  <div class="a2hs-body">
-    <div class="a2hs-title">ホーム画面に追加</div>
-    <div class="a2hs-desc" id="a2hsDesc">アプリとして使えます</div>
-    <div class="a2hs-actions">
-      <button class="a2hs-btn-add" id="a2hsAdd">追加する</button>
-      <button class="a2hs-btn-close" onclick="a2hsClose()">後で</button>
-    </div>
-  </div>
-</div>
 
 <button class="scroll-top-btn" id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="トップへ戻る">↑</button>
 <header>
@@ -454,12 +422,13 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
       </div>
       <button class="btn-share" id="btnShare" onclick="copyShareUrl()">🔗 このキーワードのURLをコピー</button>
       <button class="btn-reset-read" onclick="resetRead()">↺ 既読をリセット</button>
+      <button class="btn-a2hs" id="btnA2hs" onclick="a2hsTap()">📲 ホーム画面に追加</button>
     </div>
 
     <!-- 過去記事・動向検索 -->
     <div class="panel archive-panel-inline">
       <div class="panel-lbl" style="display:flex;align-items:center;justify-content:space-between;">
-        <span>Googleニュース検索</span>
+        <span>ニュース横断検索</span>
         <button class="archive-toggle-sp" id="archToggleSp" onclick="toggleArchiveSp()">▲</button>
       </div>
       <div class="archive-body" id="archiveBody">
@@ -1257,51 +1226,30 @@ function resetRead() {
 }
 
 
-// ── ホーム画面追加（A2HS） ──
-(function(){
-  // 既にインストール済み or 非表示設定なら出さない
-  if (localStorage.getItem('bb_a2hs_dismissed')) return;
-  if (window.navigator.standalone === true) return; // iOS: 既にホーム画面から起動中
-  if (window.matchMedia('(display-mode: standalone)').matches) return; // Android: 既にPWA起動中
 
-  var banner  = document.getElementById('a2hsBanner');
-  var desc    = document.getElementById('a2hsDesc');
-  var addBtn  = document.getElementById('a2hsAdd');
-  var deferredPrompt = null;
 
-  // Android: beforeinstallprompt イベントをキャッチ
-  window.addEventListener('beforeinstallprompt', function(e){
-    e.preventDefault();
-    deferredPrompt = e;
-    desc.textContent = 'ホーム画面に追加してアプリとして使えます';
-    banner.classList.add('show');
-    addBtn.onclick = function(){
-      deferredPrompt.prompt();
-      deferredPrompt.userChoice.then(function(){ a2hsClose(); });
-    };
-  });
-
-  // iOS Safari: beforeinstallpromptは発火しないので手動検知
-  var isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  var isSafari = /safari/i.test(navigator.userAgent) && !/chrome/i.test(navigator.userAgent);
-  if (isIos && isSafari) {
-    // 少し遅らせて表示（ページ読み込み後）
-    setTimeout(function(){
-      desc.textContent = '「共有」→「ホーム画面に追加」でアプリとして使えます';
-      addBtn.textContent = '方法を見る';
-      addBtn.onclick = function(){
-        alert('Safari下部の共有ボタン（□↑）をタップ\n→「ホーム画面に追加」を選択');
-        a2hsClose();
-      };
-      banner.classList.add('show');
-    }, 3000);
+// ── ホーム画面追加 ──
+var _a2hsDeferredPrompt = null;
+window.addEventListener('beforeinstallprompt', function(e){
+  e.preventDefault();
+  _a2hsDeferredPrompt = e;
+});
+function a2hsTap(){
+  // Android: ネイティブダイアログ
+  if (_a2hsDeferredPrompt) {
+    _a2hsDeferredPrompt.prompt();
+    _a2hsDeferredPrompt.userChoice.then(function(){ _a2hsDeferredPrompt = null; });
+    return;
   }
-
-  window.a2hsClose = function(){
-    banner.classList.remove('show');
-    localStorage.setItem('bb_a2hs_dismissed', '1');
-  };
-})();
+  // iOS Safari
+  var isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  if (isIos) {
+    alert('① Safari下部の共有ボタン（□↑）をタップ\n② 「ホーム画面に追加」を選択');
+    return;
+  }
+  // その他（Chrome等でまだpromptが来ていない場合）
+  alert('ブラウザのメニューから「ホーム画面に追加」または「アプリをインストール」を選択してください。');
+}
 
 </script>
 </body>

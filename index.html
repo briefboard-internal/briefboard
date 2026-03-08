@@ -431,6 +431,31 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
   margin-top:3px;margin-bottom:8px;
   line-height:1.5;
 }
+
+/* ── FLASH（3時間以内）アイコン ── */
+.n-flash{
+  display:inline-block;font-size:11px;margin-left:4px;
+  vertical-align:middle;flex-shrink:0;
+  animation:flashPulse 1.4s ease-in-out infinite;
+}
+@keyframes flashPulse{
+  0%,100%{opacity:1;transform:scale(1);}
+  50%{opacity:0.4;transform:scale(0.85);}
+}
+
+/* ── 共起ハイライト（2キーワード以上一致） ── */
+.n-card.cooccur{
+  border-left:3px solid var(--accent2);
+  background:rgba(226,201,126,0.06);
+}
+.n-card.cooccur .n-title{color:var(--text);}
+
+/* ── タイトル内キーワード太字 ── */
+.kw-bold{
+  font-weight:700;
+  color:var(--accent);
+}
+.n-card.read .kw-bold{color:var(--text-muted);}
 </style>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1189,8 +1214,21 @@ function renderArticleCards(body, articles, idx, kw) {
     if (a.link) currUrls.add(a.link);
 
     const isNew = a.link && !prevSeenUrls.has(a.link) && prevSeenUrls.size > 0;
+
+    // ── FLASH：3時間以内の記事 ──
+    const pubMs = a.pubDate ? new Date(a.pubDate).getTime() : 0;
+    const isFlash = pubMs > 0 && (Date.now() - pubMs) < 3 * 60 * 60 * 1000;
+
+    // ── 共起：設定キーワードが2つ以上タイトルに含まれる ──
+    const titleLow = (a.title||'').toLowerCase();
+    const matchedKws = keywords.filter(k => {
+      const terms = k.split('/').map(t=>t.trim()).filter(Boolean);
+      return terms.some(t => titleLow.includes(t.toLowerCase()));
+    });
+    const isCooccur = matchedKws.length >= 2;
+
     const card = document.createElement('div');
-    card.className = 'n-card' + (readSet.has(a.link) ? ' read' : '');
+    card.className = 'n-card' + (readSet.has(a.link) ? ' read' : '') + (isCooccur ? ' cooccur' : '');
     card.style.cursor = 'pointer';
     card.style.animationDelay = `${idx * 55 + i * 35}ms`;
     if (a.link) card.addEventListener('click', () => {
@@ -1198,6 +1236,23 @@ function renderArticleCards(body, articles, idx, kw) {
       card.classList.add('read');
       window.open(a.link, '_blank');
     });
+
+    function boldKeywords(title) {
+      let result = esc(title);
+      const terms = [];
+      keywords.forEach(function(k){
+        k.split('/').forEach(function(t){ var s=t.trim(); if(s) terms.push(s); });
+      });
+      terms.sort(function(a,b){ return b.length - a.length; });
+      terms.forEach(function(term){
+        var safe = term.split('').map(function(c){
+          return /[.*+?^${}()|[\]\\]/.test(c) ? '\\'+c : c;
+        }).join('');
+        var re = new RegExp('('+safe+')', 'gi');
+        result = result.replace(re, '<span class="kw-bold">$1</span>');
+      });
+      return result;
+    }
 
     card.setAttribute('data-link', a.link||'');
     card.setAttribute('data-orig', a.title||'');
@@ -1207,9 +1262,10 @@ function renderArticleCards(body, articles, idx, kw) {
         <span class="n-dot"></span>
         <span class="n-time">${relTime(a.pubDate)}</span>
         <span class="n-flag">${a.flag||''}</span>
+        ${isFlash ? '<span class="n-flash">⚡</span>' : ''}
         ${isNew ? '<span class="n-new">NEW</span>' : ''}
       </div>
-      <div class="n-title">${esc(a.title)}</div>`;
+      <div class="n-title">${boldKeywords(a.title)}</div>`;
 
     // 現在の言語モードに応じて翻訳
     if (currentLang !== 'orig' && a.link) {
@@ -1385,12 +1441,14 @@ function toggleArchiveSp(){
 
 
 // ── セッション終了時にURLを保存 ──
-window.addEventListener('pagehide', function(){
+window.addEventListener('pagehide', saveCurrUrls);
+window.addEventListener('visibilitychange', function(){ if(document.visibilityState==='hidden') saveCurrUrls(); });
+function saveCurrUrls(){
   if (currUrls.size > 0) {
-    const arr = Array.from(currUrls).slice(-500); // 最大500件
+    const arr = Array.from(currUrls).slice(-500);
     localStorage.setItem('bb_prev_urls', JSON.stringify(arr));
   }
-});
+}
 
 // ── トップへ戻るボタン（スマホ） ──
 (function(){

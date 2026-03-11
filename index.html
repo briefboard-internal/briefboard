@@ -446,8 +446,18 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
 .kw-bold{
   font-weight:700;
   color:var(--accent);
+  background:rgba(226,201,126,0.12);
+  border-radius:2px;
+  padding:0 1px;
 }
-.n-card.read .kw-bold{color:var(--text-muted);}
+.kw-bold-other{
+  font-weight:600;
+  color:var(--accent2);
+  border-radius:2px;
+  padding:0 1px;
+}
+.n-card.read .kw-bold{color:var(--text-muted);background:none;}
+.n-card.read .kw-bold-other{color:var(--text-dim);}
 
 /* ── ドラッグ&ドロップ ── */
 .col{cursor:default;}
@@ -1302,20 +1312,48 @@ function renderArticleCards(body, articles, idx, kw) {
       window.open(a.link, '_blank');
     });
 
-    function boldKeywords(title) {
+    function boldKeywords(title, ownKw) {
       let result = esc(title);
-      const terms = [];
-      keywords.forEach(function(k){
-        k.split('/').forEach(function(t){ var s=t.trim(); if(s) terms.push(s); });
+      // 全キーワードの検索語を収集（alias展開含む）
+      // ownKw: この列のキーワード → accent色、他 → accent2色
+      const ownTerms = [];
+      const otherTerms = [];
+      keywords.forEach(function(k) {
+        const isOwn = k === ownKw;
+        const base = [];
+        k.split('/').forEach(function(t){
+          var s = t.trim();
+          if (s) {
+            base.push(s);
+            // alias展開
+            var aliasKey = s.toLowerCase();
+            if (ALIASES[aliasKey]) {
+              ALIASES[aliasKey].forEach(function(a){ base.push(a); });
+            }
+            if (ALIASES[s]) {
+              ALIASES[s].forEach(function(a){ base.push(a); });
+            }
+          }
+        });
+        // 重複除去
+        var uniq = base.filter(function(v,i,a){ return a.indexOf(v)===i && v.length>=2; });
+        if (isOwn) ownTerms.push.apply(ownTerms, uniq);
+        else otherTerms.push.apply(otherTerms, uniq);
       });
-      terms.sort(function(a,b){ return b.length - a.length; });
-      terms.forEach(function(term){
-        var safe = term.split('').map(function(c){
-          return /[.*+?^${}()|[\]\\]/.test(c) ? '\\'+c : c;
-        }).join('');
-        var re = new RegExp('('+safe+')', 'gi');
-        result = result.replace(re, '<span class="kw-bold">$1</span>');
-      });
+      // 長い順にソート（長い語を先にマッチさせる）
+      function applyBold(terms, cls) {
+        terms.sort(function(a,b){ return b.length - a.length; });
+        terms.forEach(function(term){
+          // すでに<span>の中はスキップするため、タグ外のテキストのみ置換
+          var safe = term.split('').map(function(c){
+            return /[.*+?^${}()|[\]\\]/.test(c) ? '\\'+c : c;
+          }).join('');
+          var re = new RegExp('(?![^<]*>)('+safe+')', 'gi');
+          result = result.replace(re, '<span class="'+cls+'">$1</span>');
+        });
+      }
+      applyBold(otherTerms, 'kw-bold-other');
+      applyBold(ownTerms,   'kw-bold');
       return result;
     }
 
@@ -1330,7 +1368,7 @@ function renderArticleCards(body, articles, idx, kw) {
         ${isFlash ? '<span class="n-flash">⚡</span>' : ''}
         ${isNew ? '<span class="n-new">NEW</span>' : ''}
       </div>
-      <div class="n-title">${boldKeywords(a.title)}</div>`;
+      <div class="n-title">${boldKeywords(a.title, kw)}</div>`;
 
     // 現在の言語モードに応じて翻訳
     if (currentLang !== 'orig' && a.link) {

@@ -1359,6 +1359,18 @@ function buildCol(kw, articles, idx) {
   const head = document.createElement('div');
   head.className = 'col-head';
 
+  const kwSpan = document.createElement('span');
+  kwSpan.className = 'col-kw';
+  kwSpan.textContent = kw;
+
+  const countSpan = document.createElement('span');
+  countSpan.className = 'col-count';
+  countSpan.id = `col-count-${idx}`;
+  countSpan.textContent = articles.length + ' 件';
+
+  const kwRow = document.createElement('div');
+  kwRow.style.cssText = 'display:flex;align-items:center;gap:4px;min-width:0;flex:1;overflow:hidden';
+  kwRow.appendChild(kwSpan);
 
   const dragHint = document.createElement('span');
   dragHint.className = 'col-drag-hint';

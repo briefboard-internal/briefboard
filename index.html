@@ -745,13 +745,32 @@ const SOURCE_GROUPS = [
 const ALL_SOURCES = SOURCE_GROUPS.flatMap(g => g.sources);
 
 // ══════════════════════════════════════════════
-//  RSS PROXY — 3段階フォールバック
+//  RSS PROXY — 4段階フォールバック
+//  ① 自前Cloudflare Worker（設定後はここが最優先）
+//  ② allorigins.win
+//  ③ corsproxy.io
+//  ④ rss2json.com（150req/日/IP制限あり・最終手段）
 // ══════════════════════════════════════════════
+
+// ★ Cloudflare WorkerをデプロイしたらURLをここに設定
+//    例: 'https://briefboard-proxy.yourname.workers.dev'
+//    未設定（空文字）のままなら自動的に②以降にフォールバック
+const WORKER_URL = 'https://briefboard-proxy.so04no04.workers.dev';
+
+async function fetchViaWorker(url) {
+  if (!WORKER_URL) throw new Error('worker not configured');
+  const api = `${WORKER_URL}/?url=${encodeURIComponent(url)}`;
+  const res = await fetch(api, {signal: AbortSignal.timeout(10000)});
+  if (!res.ok) throw new Error('worker http error');
+  return parseRSSXML(await res.text());
+}
+
 async function fetchRSS(src) {
   const strategies = [
-    () => fetchViaRss2Json(src.url, 100),
+    () => fetchViaWorker(src.url),
     () => fetchViaAllOrigins(src.url),
     () => fetchViaCorsproxy(src.url),
+    () => fetchViaRss2Json(src.url, 100),
   ];
   for (const strategy of strategies) {
     try {
@@ -998,6 +1017,10 @@ async function fetchFromSource(src, query) {
     const srcName = src.name;
     const proxies = [
       async () => {
+        const xml = await fetchViaWorker(rssUrl);
+        return xml.map(i => ({...i, source: i.source||srcName, flag:'📰'}));
+      },
+      async () => {
         const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`, {signal: AbortSignal.timeout(10000)});
         const d = await r.json();
         return parseRSSXML(d.contents || '').map(i => ({...i, source: i.source||srcName, flag:'📰'}));
@@ -1034,6 +1057,10 @@ async function fetchFromSource(src, query) {
     const scholarUrl = `https://scholar.google.com/scholar_alerts?update_op=create_alert&email_for_feed=&q=${encodeURIComponent(query)}&hl=ja&as_sdt=0%2C5`;
     const rssUrl = `https://scholar.google.com/scholar?q=${encodeURIComponent(query)}&hl=ja&as_sdt=0%2C5&as_rr=1&output=rss`;
     const proxies = [
+      async () => {
+        const xml = await fetchViaWorker(rssUrl);
+        return xml.map(i => ({...i, source: i.source||'Google Scholar', flag:'🎓'}));
+      },
       async () => {
         const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`, {signal: AbortSignal.timeout(10000)});
         const d = await r.json();

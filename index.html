@@ -470,6 +470,11 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
   letter-spacing:0.5px;user-select:none;flex-shrink:0;
   padding:0 2px;
 }
+/* スマホ：長押し中のフィードバック */
+@media(max-width:768px){
+  .col-head{-webkit-user-select:none;user-select:none;}
+  .col.sortable-chosen .col-head{background:var(--surface2);border-radius:4px;}
+}
 </style>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -986,6 +991,13 @@ function renderColumns() {
       handle: '.col-head',
       ghostClass: 'sortable-ghost',
       dragClass: 'sortable-drag',
+      delay: 400,              // 長押し400msでドラッグ開始
+      delayOnTouchOnly: true,  // PCは即座にドラッグ、スマホのみ長押し
+      touchStartThreshold: 6,  // 指のブレを許容
+      scroll: true,            // 端までドラッグでスクロール
+      scrollSensitivity: 80,   // スクロール開始する端からの距離(px)
+      scrollSpeed: 12,         // スクロール速度
+      bubbleScroll: true,      // 親要素のスクロールも連動
       onEnd: function(evt) {
         if (evt.oldIndex === evt.newIndex) return;
         const moved = keywords.splice(evt.oldIndex, 1)[0];

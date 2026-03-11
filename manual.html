@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>使い方マニュアル — BriefBoard</title>
+<meta name="robots" content="noindex">
+<style>
+  :root{
+    --bg:#0c0c0f; --surface:#13131a; --surface2:#1a1a24;
+    --border:#2a2a38; --border2:#353548;
+    --accent:#e2c97e; --accent2:#6fa882;
+    --text:#eae8e2; --text-muted:#72727f; --text-dim:#3e3e50;
+    --sans:'Inter','Hiragino Sans','Noto Sans JP',sans-serif;
+    --mono:'IBM Plex Mono',monospace;
+    --serif:'Georgia','Noto Serif JP',serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    background:var(--bg);color:var(--text);
+    font-family:var(--sans);min-height:100vh;
+    line-height:1.8;
+  }
+  body::before{
+    content:'';position:fixed;inset:0;
+    background-image:linear-gradient(var(--border) 1px,transparent 1px),
+                     linear-gradient(90deg,var(--border) 1px,transparent 1px);
+    background-size:48px 48px;opacity:0.15;pointer-events:none;z-index:0;
+  }
+
+  /* ── HEADER ── */
+  header{
+    border-bottom:1px solid var(--border);padding:12px 24px;
+    position:sticky;top:0;
+    background:rgba(12,12,15,0.96);backdrop-filter:blur(16px);z-index:200;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .logo{display:flex;flex-direction:column;gap:2px;text-decoration:none;}
+  .logo-mark{font-family:var(--mono);font-size:17px;font-weight:500;color:var(--accent);letter-spacing:-1px;}
+  .logo-sub{font-family:var(--mono);font-size:9px;color:var(--text-muted);letter-spacing:1px;}
+  .back-btn{
+    font-family:var(--mono);font-size:10px;color:var(--text-muted);
+    text-decoration:none;border:1px solid var(--border2);
+    padding:5px 12px;border-radius:3px;letter-spacing:1px;
+    text-transform:uppercase;transition:all 0.2s;
+  }
+  .back-btn:hover{color:var(--accent);border-color:var(--accent);}
+
+  /* ── NAV (TOC) ── */
+  .toc-wrap{
+    position:relative;z-index:1;
+    background:var(--surface);border-bottom:1px solid var(--border);
+    padding:10px 24px;overflow-x:auto;white-space:nowrap;
+  }
+  .toc-wrap a{
+    font-family:var(--mono);font-size:10px;color:var(--text-muted);
+    text-decoration:none;margin-right:24px;letter-spacing:0.5px;
+    transition:color 0.15s;
+  }
+  .toc-wrap a:hover{color:var(--accent);}
+
+  /* ── MAIN ── */
+  main{
+    position:relative;z-index:1;
+    max-width:820px;margin:0 auto;
+    padding:48px 24px 100px;
+  }
+  .page-title{
+    font-family:var(--mono);font-size:11px;letter-spacing:3px;
+    text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;
+  }
+  .page-heading{
+    font-size:26px;font-weight:700;color:var(--accent);
+    margin-bottom:4px;letter-spacing:-0.5px;
+  }
+  .page-meta{
+    font-family:var(--mono);font-size:10px;color:var(--text-dim);
+    margin-bottom:48px;
+  }
+
+  /* ── SECTION ── */
+  .section{
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:8px;padding:28px 32px;margin-bottom:20px;
+    scroll-margin-top:80px;
+  }
+  .section-title{
+    font-family:var(--mono);font-size:10px;letter-spacing:2px;
+    text-transform:uppercase;color:var(--accent2);
+    margin-bottom:18px;display:flex;align-items:center;gap:8px;
+  }
+  .section-title::after{content:'';flex:1;height:1px;background:var(--border);}
+  .section-h2{
+    font-size:18px;font-weight:600;color:var(--text);
+    margin-bottom:16px;display:flex;align-items:center;gap:10px;
+  }
+  .section-h2 .icon{font-size:20px;}
+
+  /* ── FEATURE GRID ── */
+  .feat-grid{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+    gap:12px;margin-bottom:4px;
+  }
+  .feat-card{
+    background:var(--surface2);border:1px solid var(--border2);
+    border-radius:6px;padding:16px 18px;
+  }
+  .feat-card .feat-icon{font-size:22px;margin-bottom:8px;display:block;}
+  .feat-card .feat-name{
+    font-size:13px;font-weight:600;color:var(--text);
+    margin-bottom:4px;
+  }
+  .feat-card .feat-desc{font-size:12px;color:var(--text-muted);line-height:1.7;}
+
+  /* ── STEP LIST ── */
+  .steps{list-style:none;counter-reset:step;}
+  .steps li{
+    counter-increment:step;
+    display:flex;gap:14px;align-items:flex-start;
+    padding:12px 0;border-bottom:1px solid var(--border);
+    font-size:13px;color:var(--text-muted);line-height:1.8;
+  }
+  .steps li:last-child{border-bottom:none;}
+  .steps li::before{
+    content:counter(step);
+    min-width:24px;height:24px;
+    background:var(--accent);color:#111;
+    font-family:var(--mono);font-size:11px;font-weight:700;
+    border-radius:50%;display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;margin-top:2px;
+  }
+  .steps li strong{color:var(--text);}
+
+  /* ── UI LABEL ── */
+  .ui{
+    display:inline-block;
+    background:var(--surface2);border:1px solid var(--border2);
+    border-radius:3px;padding:1px 7px;
+    font-family:var(--mono);font-size:11px;color:var(--accent);
+    white-space:nowrap;
+  }
+  .badge-new{
+    background:var(--accent);color:#111;
+    font-family:var(--mono);font-size:9px;font-weight:700;
+    border-radius:2px;padding:1px 5px;vertical-align:middle;
+  }
+  .badge-flash{color:#ff9500;font-size:13px;vertical-align:middle;}
+
+  /* ── ALIAS TABLE ── */
+  .alias-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:12px;}
+  .alias-table th{
+    font-family:var(--mono);font-size:9px;letter-spacing:1px;text-transform:uppercase;
+    color:var(--text-dim);padding:6px 10px;border-bottom:1px solid var(--border);
+    text-align:left;font-weight:normal;
+  }
+  .alias-table td{
+    color:var(--text-muted);padding:7px 10px;border-bottom:1px solid var(--border);
+    vertical-align:top;line-height:1.7;
+  }
+  .alias-table tr:last-child td{border-bottom:none;}
+  .alias-table td:first-child{color:var(--accent);font-weight:600;white-space:nowrap;font-family:var(--mono);}
+  .alias-table td:nth-child(2){color:var(--text);white-space:nowrap;}
+
+  /* ── NOTE BOX ── */
+  .note{
+    background:rgba(226,201,126,0.06);border:1px solid rgba(226,201,126,0.2);
+    border-radius:4px;padding:12px 16px;margin-top:14px;
+    font-size:12px;color:var(--text-muted);line-height:1.8;
+  }
+  .note strong{color:var(--accent);}
+  .note-green{
+    background:rgba(111,168,130,0.08);border:1px solid rgba(111,168,130,0.25);
+    border-radius:4px;padding:12px 16px;margin-top:14px;
+    font-size:12px;color:var(--text-muted);line-height:1.8;
+  }
+  .note-green strong{color:var(--accent2);}
+
+  /* ── PROSE ── */
+  .prose{font-size:13px;color:var(--text-muted);line-height:1.9;margin-bottom:14px;}
+  .prose:last-child{margin-bottom:0;}
+  .prose strong{color:var(--text);}
+  .prose a{color:var(--accent);text-decoration:none;}
+  .prose a:hover{text-decoration:underline;}
+
+  /* ── KW HIGHLIGHT DEMO ── */
+  .demo-card{
+    background:var(--surface2);border:1px solid var(--border2);
+    border-radius:6px;padding:14px 16px;margin-top:12px;
+    font-family:var(--serif);font-size:13px;line-height:1.7;color:var(--text-muted);
+  }
+  .demo-card .kw-own{
+    font-weight:700;color:var(--accent);
+    background:rgba(226,201,126,0.15);border-radius:2px;padding:0 2px;
+  }
+  .demo-card .kw-other{font-weight:700;color:var(--accent2);}
+  .demo-card.cooccur{border-left:3px solid var(--accent);background:rgba(226,201,126,0.04);}
+
+  /* ── SHORTCUT TABLE ── */
+  .shortcut-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:12px;}
+  .shortcut-table td{
+    padding:8px 12px;border-bottom:1px solid var(--border);
+    color:var(--text-muted);vertical-align:middle;
+  }
+  .shortcut-table tr:last-child td{border-bottom:none;}
+  .shortcut-table td:first-child{
+    width:40%;color:var(--text);font-weight:500;
+  }
+
+  /* ── SOURCE GROUPS ── */
+  .src-group{margin-bottom:16px;}
+  .src-group-label{
+    font-family:var(--mono);font-size:10px;color:var(--text-dim);
+    letter-spacing:1px;margin-bottom:8px;padding-bottom:4px;
+    border-bottom:1px solid var(--border);
+  }
+  .src-pills{display:flex;flex-wrap:wrap;gap:6px;}
+  .src-pill{
+    background:var(--surface2);border:1px solid var(--border2);
+    border-radius:4px;padding:5px 10px;font-size:11px;
+    color:var(--text-muted);line-height:1.4;
+  }
+  .src-pill strong{color:var(--text);display:block;font-size:12px;}
+
+  /* ── FOOTER ── */
+  footer{
+    position:relative;z-index:1;
+    border-top:1px solid var(--border);
+    padding:16px 24px;
+    display:flex;align-items:center;justify-content:center;gap:16px;
+  }
+  .ft-txt{font-family:var(--mono);font-size:10px;color:var(--text-dim);}
+  .ft-txt a{color:var(--text-dim);text-decoration:none;}
+  .ft-txt a:hover{color:var(--accent);}
+
+  @media(max-width:600px){
+    main{padding:32px 16px 80px;}
+    .section{padding:18px 16px;}
+    .feat-grid{grid-template-columns:1fr 1fr;}
+    .toc-wrap{padding:10px 16px;}
+  }
+  @media(max-width:400px){
+    .feat-grid{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="index.html">
+    <span class="logo-mark">BriefBoard</span>
+    <span class="logo-sub">Your pick, your news.</span>
+  </a>
+  <a class="back-btn" href="index.html">← ダッシュボードへ</a>
+</header>
+
+<nav class="toc-wrap">
+  <a href="#overview">概要</a>
+  <a href="#keywords">キーワード</a>
+  <a href="#sources">ソース設定</a>
+  <a href="#cards">カード表示</a>
+  <a href="#highlight">ハイライト</a>
+  <a href="#aliases">エイリアス</a>
+  <a href="#sort">並び替え</a>
+  <a href="#translation">翻訳</a>
+  <a href="#search">横断検索</a>
+  <a href="#share">共有・その他</a>
+</nav>
+
+<main>
+  <p class="page-title">User Manual</p>
+  <h1 class="page-heading">BriefBoard 使い方マニュアル</h1>
+  <p class="page-meta">最終更新：2026年3月 &nbsp;·&nbsp; v1.0</p>
+
+  <!-- ══ 概要 ══ -->
+  <section class="section" id="overview">
+    <p class="section-title">01 &nbsp; 概要</p>
+    <h2 class="section-h2"><span class="icon">📋</span>BriefBoard とは</h2>
+    <p class="prose">BriefBoard は、<strong>登録したキーワードごとに最新ニュースを自動取得・並べて表示する社内向けニュースダッシュボード</strong>です。サーバー不要・完全無料で、GitHub Pages 上で動作します。</p>
+    <div class="feat-grid">
+      <div class="feat-card">
+        <span class="feat-icon">🔑</span>
+        <div class="feat-name">キーワード列</div>
+        <div class="feat-desc">キーワードごとに列を作成。最大 10 個まで登録可能。</div>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">📡</span>
+        <div class="feat-name">複数ソース対応</div>
+        <div class="feat-desc">Google News、NHK、海外メディアなど 3 つまで同時選択。</div>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">✨</span>
+        <div class="feat-name">キーワード強調</div>
+        <div class="feat-desc">記事タイトル内の関連語を色分け・太字でハイライト。</div>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">🌐</span>
+        <div class="feat-name">自動翻訳</div>
+        <div class="feat-desc">英語記事を日本語に、日本語を英語に切り替え可能。</div>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">⚡</span>
+        <div class="feat-name">FLASH 表示</div>
+        <div class="feat-desc">公開 3 時間以内の記事に点滅アイコンで速報を通知。</div>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">🔗</span>
+        <div class="feat-name">URL 共有</div>
+        <div class="feat-desc">キーワード設定を URL にエクスポートして同僚と共有。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ キーワード ══ -->
+  <section class="section" id="keywords">
+    <p class="section-title">02 &nbsp; キーワード設定</p>
+    <h2 class="section-h2"><span class="icon">🔑</span>キーワードの追加・削除</h2>
+    <ul class="steps">
+      <li>左サイドバーの <span class="ui">🔍 検索キーワード</span> パネルを開く。</li>
+      <li>入力欄にキーワードを入力して <span class="ui">+ 追加</span> ボタンを押す（または <span class="ui">Enter</span>）。カンマ区切りで複数まとめて追加可能。</li>
+      <li>追加されたキーワードはタグとして表示される。<strong>✕ をクリックで削除</strong>。</li>
+      <li>キーワードは <strong>最大 10 個</strong>まで登録できる。</li>
+    </ul>
+    <div class="note">
+      <strong>OR 検索（スラッシュ区切り）：</strong>
+      「<code>EV/電気自動車/BEV</code>」のようにスラッシュで区切ると、いずれかの語を含む記事をまとめて 1 列に表示します。
+    </div>
+    <div class="note-green" style="margin-top:10px;">
+      <strong>既読リセット：</strong>
+      <span class="ui">↺ 既読をリセット</span> ボタンを押すと、グレーアウトした既読記事がすべてリセットされます。
+    </div>
+  </section>
+
+  <!-- ══ ソース ══ -->
+  <section class="section" id="sources">
+    <p class="section-title">03 &nbsp; ソース設定</p>
+    <h2 class="section-h2"><span class="icon">📡</span>ニュースソースの選択</h2>
+    <p class="prose">サイドバーの <span class="ui">⚙ ソース設定</span> パネルからソースを選択します。<strong>最大 3 つ</strong>まで同時選択可能。選択後 <span class="ui">✓ 適用して更新</span> を押すと反映されます。</p>
+
+    <div class="src-group">
+      <p class="src-group-label">🔍 Google News</p>
+      <div class="src-pills">
+        <div class="src-pill"><strong>Google News 日本語</strong>国内・日本語記事を網羅</div>
+        <div class="src-pill"><strong>Google News 英語</strong>海外速報・英語記事中心</div>
+      </div>
+    </div>
+    <div class="src-group">
+      <p class="src-group-label">🇯🇵 日本語メディア</p>
+      <div class="src-pills">
+        <div class="src-pill"><strong>NHK</strong>公共放送ニュース</div>
+        <div class="src-pill"><strong>東洋経済</strong>ビジネス・経済</div>
+        <div class="src-pill"><strong>ITmedia</strong>IT・テクノロジー</div>
+        <div class="src-pill"><strong>ベストカー</strong>自動車専門誌</div>
+        <div class="src-pill"><strong>ASCII</strong>テック・デジタル</div>
+      </div>
+    </div>
+    <div class="src-group">
+      <p class="src-group-label">⚡ EV・電池（英語）</p>
+      <div class="src-pills">
+        <div class="src-pill"><strong>Electrek</strong>EV・再生可能エネルギー</div>
+        <div class="src-pill"><strong>InsideEVs</strong>EV専門メディア</div>
+        <div class="src-pill"><strong>CleanTechnica</strong>クリーンテック</div>
+        <div class="src-pill"><strong>Car and Driver</strong>自動車総合誌</div>
+        <div class="src-pill"><strong>WIRED</strong>テック・未来トレンド</div>
+      </div>
+    </div>
+    <div class="src-group">
+      <p class="src-group-label">🌐 総合ビジネス（英語）</p>
+      <div class="src-pills">
+        <div class="src-pill"><strong>BBC</strong>国際ニュース</div>
+        <div class="src-pill"><strong>Financial Times</strong>金融・経済</div>
+        <div class="src-pill"><strong>TechCrunch</strong>スタートアップ・テック</div>
+        <div class="src-pill"><strong>The Verge</strong>テクノロジー</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ カード ══ -->
+  <section class="section" id="cards">
+    <p class="section-title">04 &nbsp; カード表示</p>
+    <h2 class="section-h2"><span class="icon">📰</span>記事カードの見方</h2>
+    <table class="shortcut-table">
+      <tr>
+        <td><span class="badge-flash">⚡</span> FLASH アイコン</td>
+        <td>公開から <strong>3 時間以内</strong>の速報記事。点滅アニメーション付き。</td>
+      </tr>
+      <tr>
+        <td><span class="badge-new">NEW</span> バッジ</td>
+        <td>前回の訪問時にはなかった新着記事。<strong>2 回目以降の訪問から機能</strong>します。</td>
+      </tr>
+      <tr>
+        <td>グレーアウト ＋ ✓</td>
+        <td>クリックして開いた<strong>既読記事</strong>。不透明度が下がり ✓ が付く。</td>
+      </tr>
+      <tr>
+        <td>左ゴールドボーダー</td>
+        <td>設定中のキーワードが <strong>2 つ以上</strong>タイトルに含まれる「共起記事」。</td>
+      </tr>
+      <tr>
+        <td>カードをクリック</td>
+        <td>新しいタブで元記事を開く。同時に既読としてマークされる。</td>
+      </tr>
+    </table>
+    <div class="note">
+      <strong>重複排除：</strong>同一内容の記事（タイトルが実質同じ記事）は自動的に除去されます。複数ソースから取得した場合も重複は 1 件のみ表示されます。
+    </div>
+  </section>
+
+  <!-- ══ ハイライト ══ -->
+  <section class="section" id="highlight">
+    <p class="section-title">05 &nbsp; キーワードハイライト</p>
+    <h2 class="section-h2"><span class="icon">✨</span>色分けハイライトの仕組み</h2>
+    <p class="prose">記事タイトル内に設定キーワードが含まれる場合、以下のルールで強調表示されます：</p>
+    <table class="shortcut-table">
+      <tr>
+        <td style="color:var(--accent);font-weight:700;">ゴールド太字（薄背景）</td>
+        <td>その列自身のキーワード。最も目立つ強調表示。</td>
+      </tr>
+      <tr>
+        <td style="color:var(--accent2);font-weight:700;">グリーン太字</td>
+        <td>他の列のキーワード。複数テーマにまたがる記事を発見しやすくなる。</td>
+      </tr>
+    </table>
+    <p class="prose" style="margin-top:14px;">表示例：「<strong>テスラ</strong>」列の記事に「<strong>イーロン・マスク</strong>」列のキーワードも含まれる場合：</p>
+    <div class="demo-card cooccur">
+      <span class="kw-own">Tesla</span> の新モデル発表に <span class="kw-other">イーロン・マスク</span> が言及、EV市場に波紋
+    </div>
+    <div class="note" style="margin-top:14px;">
+      <strong>翻訳後もハイライトは維持されます。</strong>「日本語」「English」モードに切り替えた後も、翻訳されたタイトルに対してハイライトが再適用されます。
+    </div>
+  </section>
+
+  <!-- ══ エイリアス ══ -->
+  <section class="section" id="aliases">
+    <p class="section-title">06 &nbsp; エイリアス（表記ゆれ対応）</p>
+    <h2 class="section-h2"><span class="icon">🔄</span>自動的に認識される表記バリアント</h2>
+    <p class="prose">あらかじめ登録されたエイリアスにより、<strong>1 つのキーワードで複数の表記を同時に検索・ハイライト</strong>できます。</p>
+    <table class="alias-table">
+      <tr>
+        <th>入力キーワード</th>
+        <th>自動的に認識される表記</th>
+        <th>説明</th>
+      </tr>
+      <tr>
+        <td>イーロンマスク</td>
+        <td>Elon Musk / elon / musk / イーロン・マスク</td>
+        <td>中点・スペース有無も吸収</td>
+      </tr>
+      <tr>
+        <td>EV</td>
+        <td>electric vehicle / electric car / BEV / 電気自動車</td>
+        <td>英日両方に対応</td>
+      </tr>
+      <tr>
+        <td>テスラ</td>
+        <td>Tesla / テスラ</td>
+        <td>英日表記</td>
+      </tr>
+      <tr>
+        <td>パナソニックエナジー</td>
+        <td>Panasonic Energy / PECJ / 円筒形電池 / 2170電池</td>
+        <td>子会社・関連語を含む</td>
+      </tr>
+      <tr>
+        <td>トヨタグループ</td>
+        <td>Toyota Group / デンソー / アイシン / トヨタ</td>
+        <td>グループ会社を横断検索</td>
+      </tr>
+      <tr>
+        <td>アイシン</td>
+        <td>Aisin / アイシン精機 / Aisin Corporation</td>
+        <td>旧社名も対応</td>
+      </tr>
+      <tr>
+        <td>自動運転</td>
+        <td>autonomous driving / self-driving / ADAS / Level 4</td>
+        <td>技術用語を網羅</td>
+      </tr>
+      <tr>
+        <td>全固体電池</td>
+        <td>solid-state battery / solid state / all-solid-state</td>
+        <td>英語技術用語に対応</td>
+      </tr>
+    </table>
+    <div class="note">
+      <strong>中点・スペース吸収：</strong>「イーロン・マスク」と入力すると「イーロンマスク」「イーロン マスク」にも自動マッチします。
+    </div>
+  </section>
+
+  <!-- ══ 並び替え ══ -->
+  <section class="section" id="sort">
+    <p class="section-title">07 &nbsp; 列の並び替え</p>
+    <h2 class="section-h2"><span class="icon">↕</span>ドラッグ＆ドロップで並び替え</h2>
+    <table class="shortcut-table">
+      <tr>
+        <td>💻 PC</td>
+        <td>列ヘッダー（<span class="ui">⠿</span> マーク）を<strong>掴んでドラッグ</strong>。ドラッグ中は全列がコンパクトに縮小し、全体が一覧できる。</td>
+      </tr>
+      <tr>
+        <td>📱 スマホ</td>
+        <td>画面上部の <span class="ui">⇅ 並び替え</span> ボタンをタップしてモーダルを開く。各行の <span class="ui">⠿</span> をドラッグして順番を変え、<span class="ui">✓ 完了</span> で確定。</td>
+      </tr>
+    </table>
+    <div class="note-green">
+      <strong>並び順はブラウザに自動保存</strong>されます。次回アクセス時も同じ順番で表示されます。
+    </div>
+  </section>
+
+  <!-- ══ 翻訳 ══ -->
+  <section class="section" id="translation">
+    <p class="section-title">08 &nbsp; 自動翻訳</p>
+    <h2 class="section-h2"><span class="icon">🌐</span>言語切り替え</h2>
+    <p class="prose">ヘッダー右上の言語ボタンで表示言語を切り替えられます：</p>
+    <table class="shortcut-table">
+      <tr>
+        <td><span class="ui">原文</span></td>
+        <td>取得した記事をそのままの言語で表示（デフォルト）。</td>
+      </tr>
+      <tr>
+        <td><span class="ui">日本語</span></td>
+        <td>英語など日本語以外の記事タイトルを自動翻訳して表示。</td>
+      </tr>
+      <tr>
+        <td><span class="ui">English</span></td>
+        <td>日本語などの記事タイトルを英語に翻訳して表示。</td>
+      </tr>
+    </table>
+    <div class="note">
+      Google 翻訳 API を使用しています。翻訳中は記事タイトルが薄くなり、完了後に表示されます。<strong>キーワードのハイライトは翻訳後のテキストにも維持</strong>されます。
+    </div>
+  </section>
+
+  <!-- ══ 横断検索 ══ -->
+  <section class="section" id="search">
+    <p class="section-title">09 &nbsp; ニュース横断検索</p>
+    <h2 class="section-h2"><span class="icon">🔎</span>全列を対象にフリーワード検索</h2>
+    <ul class="steps">
+      <li>サイドバーの <span class="ui">🔎 ニュース横断検索</span> パネルを開く。</li>
+      <li>検索ワードを入力すると、<strong>全列の取得済み記事からリアルタイムにフィルタリング</strong>される。</li>
+      <li>検索ワードを消すと全件表示に戻る。</li>
+    </ul>
+    <div class="note-green">
+      ニュース横断検索はすでに取得されたキャッシュ内を検索します。新しいキーワードでニュースを取得したい場合はキーワードを追加してください。
+    </div>
+  </section>
+
+  <!-- ══ 共有・その他 ══ -->
+  <section class="section" id="share">
+    <p class="section-title">10 &nbsp; 共有・その他の機能</p>
+    <h2 class="section-h2"><span class="icon">🔗</span>URL 共有</h2>
+    <p class="prose"><span class="ui">🔗 このキーワードのURLをコピー</span> ボタンを押すと、現在のキーワード設定が URL パラメータとして含まれたリンクがクリップボードにコピーされます。</p>
+    <p class="prose">受け取った人がそのURLを開くと、<strong>同じキーワードで自動的に初期化</strong>されます。社内での情報共有に活用できます。</p>
+
+    <h2 class="section-h2" style="margin-top:24px;"><span class="icon">📲</span>ホーム画面に追加（スマホ）</h2>
+    <p class="prose">スマホでは <span class="ui">📲 ホーム画面に追加</span> ボタンが表示されます。タップすると操作ガイドが表示され、アプリとしてインストールできます。</p>
+
+    <h2 class="section-h2" style="margin-top:24px;"><span class="icon">⚙️</span>プロキシ・通信の仕組み</h2>
+    <p class="prose">会社のネットワーク制限に対応するため、以下の順でRSSを取得します：</p>
+    <table class="shortcut-table">
+      <tr><td>① Cloudflare Worker（自前）</td><td>最優先。社内PCでも動作。</td></tr>
+      <tr><td>② allorigins.win</td><td>フォールバック1。</td></tr>
+      <tr><td>③ corsproxy.io</td><td>フォールバック2。</td></tr>
+      <tr><td>④ rss2json.com</td><td>最終手段（150リクエスト/日/IP）。</td></tr>
+    </table>
+    <div class="note">
+      <strong>データはブラウザ内にのみ保存されます。</strong>キーワード・既読情報・ソース設定はすべて localStorage（ブラウザのローカルストレージ）に記録され、外部サーバーには送信されません。
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <span class="ft-txt">BriefBoard &nbsp;·&nbsp; <a href="index.html">ダッシュボード</a> &nbsp;·&nbsp; <a href="terms.html">利用規約・免責事項</a></span>
+</footer>
+
+</body>
+</html>

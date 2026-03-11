@@ -233,9 +233,7 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
 
 /* ── COLUMN MOVE BUTTONS ── */
-.col-move-btn{background:var(--surface2);border:1px solid var(--border2);border-radius:3px;color:var(--accent2);font-size:11px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;flex-shrink:0;transition:all 0.15s;-webkit-tap-highlight-color:transparent;line-height:1;}
-.col-move-btn:hover,.col-move-btn:active{background:var(--accent2);border-color:var(--accent2);color:var(--bg);}
-.col-move-btn:disabled{opacity:0.15;cursor:default;pointer-events:none;}
+
 
 /* ── CARD REORDER (↑↓, kept for reference) ── */
 .n-card-wrap{position:relative;}
@@ -499,7 +497,6 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
   text-align:center;
   flex:1;
 }
-.columns-grid.dragging-mode .col-move-btn,
 .columns-grid.dragging-mode .col-count,
 .columns-grid.dragging-mode .col-drag-hint{
   display:none !important;
@@ -1168,7 +1165,6 @@ function renderColumns() {
         keywords.splice(evt.newIndex, 0, moved);
         localStorage.setItem('bb_kw', JSON.stringify(keywords));
         renderTags();
-        updateMoveButtons();
       }
     });
   }
@@ -1227,14 +1223,6 @@ function closeSortModal() {
 }
 
 
-function updateMoveButtons() {
-  const cols = document.querySelectorAll('#colsGrid .col');
-  cols.forEach((col, i) => {
-    const btns = col.querySelectorAll('.col-move-btn');
-    if (btns[0]) btns[0].disabled = i === 0;
-    if (btns[1]) btns[1].disabled = i === cols.length - 1;
-  });
-}
 
 // 選択されたソースからキーワード記事を取得
 async function fetchByKeyword(kw, idx) {
@@ -1371,36 +1359,6 @@ function buildCol(kw, articles, idx) {
   const head = document.createElement('div');
   head.className = 'col-head';
 
-  const btnL = document.createElement('button');
-  btnL.className = 'col-move-btn';
-  btnL.textContent = '◀';
-  btnL.title = '左へ移動';
-  btnL.disabled = idx === 0;
-  btnL.addEventListener('click', e => { e.stopPropagation(); moveCol(idx, -1); });
-
-  const kwSpan = document.createElement('span');
-  kwSpan.className = 'col-kw';
-  kwSpan.textContent = kw;
-
-  const btnR = document.createElement('button');
-  btnR.className = 'col-move-btn';
-  btnR.textContent = '▶';
-  btnR.title = '右へ移動';
-  btnR.disabled = idx === keywords.length - 1;
-  btnR.addEventListener('click', e => { e.stopPropagation(); moveCol(idx, +1); });
-
-
-
-  const countSpan = document.createElement('span');
-  countSpan.className = 'col-count';
-  countSpan.id = `col-count-${idx}`;
-  countSpan.textContent = articles.length + ' 件';
-
-  const kwRow = document.createElement('div');
-  kwRow.style.cssText = 'display:flex;align-items:center;gap:4px;min-width:0;flex:1;overflow:hidden';
-  kwRow.appendChild(btnL);
-  kwRow.appendChild(kwSpan);
-  kwRow.appendChild(btnR);
 
   const dragHint = document.createElement('span');
   dragHint.className = 'col-drag-hint';
@@ -1428,14 +1386,6 @@ function buildCol(kw, articles, idx) {
 
 
 // 列を左右に移動（キーワード配列も連動）
-function moveCol(idx, dir) {
-  const newIdx = idx + dir;
-  if (newIdx < 0 || newIdx >= keywords.length) return;
-  [keywords[idx], keywords[newIdx]] = [keywords[newIdx], keywords[idx]];
-  localStorage.setItem('bb_kw', JSON.stringify(keywords));
-  renderTags();
-  renderColumns();
-}
 
 
 // ══════════════════════════════════════════════

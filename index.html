@@ -614,9 +614,11 @@ const ALIASES = {
   'レクサス':['lexus','レクサス'],'lexus':['lexus','レクサス'],
   'トヨタグループ':['toyota group','トヨタグループ','デンソー OR アイシン OR トヨタ'],'denso':['denso','デンソー'],
   'デンソー':['denso','デンソー'],
-  'アイシン':['aisin','アイシン'],
+  'アイシン':['aisin','アイシン','aisin seiki','アイシン精機','aisin corporation'],'aisin':['aisin','アイシン','アイシン精機','aisin corporation'],
   'ジェイテクト':['jtekt','ジェイテクト'],
-  '豊田自動織機':['toyota industries','豊田自動織機'],
+  '豊田自動織機':['toyota industries','豊田自動織機'],'toyota industries':['toyota industries','豊田自動織機'],
+  'トヨタ紡織':['toyota boshoku','トヨタ紡織'],'toyota boshoku':['toyota boshoku','トヨタ紡織'],
+  '豊田通商':['toyota tsusho','豊田通商'],'toyota tsusho':['toyota tsusho','豊田通商'],
   // ── 海外完成車メーカー ──
   'テスラ':['tesla','テスラ'],'tesla':['tesla','テスラ'],
   'byd':['byd','比亜迪','ビーワイディー'],'ビーワイディー':['byd','比亜迪','ビーワイディー'],
@@ -648,7 +650,12 @@ const ALIASES = {
   'タタ':['tata motors','タタ'],'tata':['tata','タタ'],
   // ── 電池メーカー ──
   'catl':['catl','寧德時代','CATL'],'寧德時代':['catl','寧德時代'],
-  'パナソニック':['panasonic','パナソニック'],'panasonic':['panasonic','パナソニック'],
+  'パナソニック':['panasonic','パナソニック','松下','Panasonic Holdings','パナソニックホールディングス'],
+  'panasonic':['panasonic','パナソニック','松下'],
+  'パナソニックエナジー':['panasonic energy','パナソニックエナジー','Panasonic Energy Co','PECJ','cylindrical battery','円筒形電池','2170電池','tesla battery panasonic'],
+  'panasonic energy':['panasonic energy','パナソニックエナジー','PECJ','円筒形電池'],
+  'パナソニックホールディングス':['panasonic holdings','パナソニックホールディングス','panasonic hd'],
+  'panasonic holdings':['panasonic holdings','パナソニックホールディングス','panasonic hd'],
   'lgエネルギー':['lg energy','lg化学','LG Energy Solution','lgエネルギー'],'lg energy':['lg energy','LG Energy Solution'],
   'サムスンsdi':['samsung sdi','サムスンSDI'],'samsung sdi':['samsung sdi','サムスンSDI'],
   'skオン':['sk on','SK Innovation','skオン'],'sk on':['sk on','SK Innovation'],
@@ -709,6 +716,20 @@ const ALIASES = {
   '関税':['tariff','関税'],'貿易':['trade','貿易'],
   'ai':['ai','人工知能','artificial intelligence'],'自動車':['automotive','automobile','自動車','car','vehicle'],
   '中国ev':['china ev','中国EV','Chinese EV','中国電気自動車'],
+  // ── 人物 ──
+  'イーロンマスク':['elon musk','elon','musk','イーロン・マスク','イーロンマスク','イーロン マスク'],
+  'イーロン・マスク':['elon musk','elon','musk','イーロン・マスク','イーロンマスク','イーロン マスク'],
+  'elon musk':['elon musk','elon','musk','イーロン・マスク','イーロンマスク'],
+  'elon':['elon musk','elon','musk','イーロン・マスク','イーロンマスク'],
+  'musk':['elon musk','musk','マスク','イーロン・マスク'],
+  'トランプ':['trump','donald trump','トランプ','ドナルド・トランプ'],
+  'trump':['trump','donald trump','トランプ','ドナルド・トランプ'],
+  'ティムクック':['tim cook','apple ceo','ティム・クック','ティムクック'],
+  'tim cook':['tim cook','ティム・クック','ティムクック'],
+  'サムアルトマン':['sam altman','openai','サム・アルトマン','サムアルトマン'],
+  'sam altman':['sam altman','サム・アルトマン','openai ceo'],
+  '豊田章男':['akio toyoda','豊田章男','トヨタ会長'],'akio toyoda':['akio toyoda','豊田章男'],
+  '内田誠':['makoto uchida','内田誠','日産社長'],'内田':['内田誠','日産'],
 };
 function getAliases(kw) {
   return ALIASES[kw] || ALIASES[kw.toLowerCase()] || [kw];
@@ -1426,6 +1447,12 @@ function boldKeywords(title, ownKw) {
         var aliasKey = s.toLowerCase();
         if (ALIASES[aliasKey]) ALIASES[aliasKey].forEach(function(a){ base.push(a); });
         if (ALIASES[s]) ALIASES[s].forEach(function(a){ base.push(a); });
+        // 中点・スペース除去バリアント（例：「イーロン・マスク」→「イーロンマスク」）
+        var stripped = s.replace(/[・\s]/g, '');
+        if (stripped !== s) {
+          base.push(stripped);
+          if (ALIASES[stripped.toLowerCase()]) ALIASES[stripped.toLowerCase()].forEach(function(a){ base.push(a); });
+        }
       }
     });
     var uniq = base.filter(function(v,i,a){ return a.indexOf(v)===i && v.length>=2; });

@@ -991,13 +991,14 @@ function renderColumns() {
       handle: '.col-head',
       ghostClass: 'sortable-ghost',
       dragClass: 'sortable-drag',
-      delay: 400,              // 長押し400msでドラッグ開始
-      delayOnTouchOnly: true,  // PCは即座にドラッグ、スマホのみ長押し
-      touchStartThreshold: 6,  // 指のブレを許容
-      scroll: true,            // 端までドラッグでスクロール
-      scrollSensitivity: 80,   // スクロール開始する端からの距離(px)
-      scrollSpeed: 12,         // スクロール速度
-      bubbleScroll: true,      // 親要素のスクロールも連動
+      delay: 400,
+      delayOnTouchOnly: true,
+      touchStartThreshold: 6,
+      scroll: true,
+      scrollSensitivity: 80,
+      scrollSpeed: 12,
+      bubbleScroll: true,
+      forceFallback: false,   // ブラウザネイティブDnDを使用（位置ずれ防止）
       onEnd: function(evt) {
         if (evt.oldIndex === evt.newIndex) return;
         const moved = keywords.splice(evt.oldIndex, 1)[0];
@@ -1324,50 +1325,8 @@ function renderArticleCards(body, articles, idx, kw) {
       window.open(a.link, '_blank');
     });
 
-    function boldKeywords(title, ownKw) {
-      let result = esc(title);
-      // 全キーワードの検索語を収集（alias展開含む）
-      // ownKw: この列のキーワード → accent色、他 → accent2色
-      const ownTerms = [];
-      const otherTerms = [];
-      keywords.forEach(function(k) {
-        const isOwn = k === ownKw;
-        const base = [];
-        k.split('/').forEach(function(t){
-          var s = t.trim();
-          if (s) {
-            base.push(s);
-            // alias展開
-            var aliasKey = s.toLowerCase();
-            if (ALIASES[aliasKey]) {
-              ALIASES[aliasKey].forEach(function(a){ base.push(a); });
-            }
-            if (ALIASES[s]) {
-              ALIASES[s].forEach(function(a){ base.push(a); });
-            }
-          }
-        });
-        // 重複除去
-        var uniq = base.filter(function(v,i,a){ return a.indexOf(v)===i && v.length>=2; });
-        if (isOwn) ownTerms.push.apply(ownTerms, uniq);
-        else otherTerms.push.apply(otherTerms, uniq);
-      });
-      // 長い順にソート（長い語を先にマッチさせる）
-      function applyBold(terms, cls) {
-        terms.sort(function(a,b){ return b.length - a.length; });
-        terms.forEach(function(term){
-          // すでに<span>の中はスキップするため、タグ外のテキストのみ置換
-          var safe = term.split('').map(function(c){
-            return /[.*+?^${}()|[\]\\]/.test(c) ? '\\'+c : c;
-          }).join('');
-          var re = new RegExp('(?![^<]*>)('+safe+')', 'gi');
-          result = result.replace(re, '<span class="'+cls+'">$1</span>');
-        });
-      }
-      applyBold(otherTerms, 'kw-bold-other');
-      applyBold(ownTerms,   'kw-bold');
-      return result;
-    }
+    // boldKeywords は外部グローバル関数として定義済み
+
 
     card.setAttribute('data-link', a.link||'');
     card.setAttribute('data-orig', a.title||'');
@@ -1436,8 +1395,11 @@ async function translateTitle(link, title, lang, el) {
     const data = await res.json();
     const translated = data?.[0]?.map(seg => seg?.[0] || '').join('') || title;
     translateCache[cacheKey] = translated;
-    // まだ同じ言語モードなら反映
-    if (currentLang === lang) el.textContent = translated;
+    // まだ同じ言語モードなら反映（boldKeywordsを再適用してHTMLを維持）
+    if (currentLang === lang) {
+      const ownKw = el.closest('.col') ? el.closest('.col').querySelector('.col-kw')?.textContent || '' : '';
+      el.innerHTML = boldKeywords(translated, ownKw);
+    }
   } catch(e) {
     // 翻訳失敗時は原文を維持
   } finally {
@@ -1448,7 +1410,42 @@ async function translateTitle(link, title, lang, el) {
 // ══════════════════════════════════════════════
 //  UTILS
 // ══════════════════════════════════════════════
-function esc(s){return String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+// グローバルboldKeywords（翻訳後の再適用にも使用）
+function boldKeywords(title, ownKw) {
+  var result = esc(title);
+  var ownTerms = [];
+  var otherTerms = [];
+  keywords.forEach(function(k) {
+    var isOwn = k === ownKw;
+    var base = [];
+    k.split('/').forEach(function(t){
+      var s = t.trim();
+      if (s) {
+        base.push(s);
+        var aliasKey = s.toLowerCase();
+        if (ALIASES[aliasKey]) ALIASES[aliasKey].forEach(function(a){ base.push(a); });
+        if (ALIASES[s]) ALIASES[s].forEach(function(a){ base.push(a); });
+      }
+    });
+    var uniq = base.filter(function(v,i,a){ return a.indexOf(v)===i && v.length>=2; });
+    if (isOwn) ownTerms.push.apply(ownTerms, uniq);
+    else otherTerms.push.apply(otherTerms, uniq);
+  });
+  function applyBold(terms, cls) {
+    terms.sort(function(a,b){ return b.length - a.length; });
+    terms.forEach(function(term){
+      var safe = term.split('').map(function(c){
+        return /[.*+?^${}()|[\]\\]/.test(c) ? '\\'+c : c;
+      }).join('');
+      var re = new RegExp('(?![^<]*>)('+safe+')', 'gi');
+      result = result.replace(re, '<span class="'+cls+'">$1</span>');
+    });
+  }
+  applyBold(otherTerms, 'kw-bold-other');
+  applyBold(ownTerms,   'kw-bold');
+  return result;
+}
 function escAttr(s){return String(s||'').replace(/'/g,"\\'");}
 
 // 翻訳ポップアップ開閉
@@ -1645,14 +1642,7 @@ function renderSrcPanel() {
         </div>`).join('')}
     </div>`).join('');
 }
-function toggleSrcPanel() {
-  const body = document.getElementById('srcPanelBody');
-  const arrow = document.getElementById('srcPanelArrow');
-  const isOpen = body.style.display !== 'none';
-  body.style.display = isOpen ? 'none' : 'block';
-  arrow.textContent = isOpen ? '▼' : '▲';
-  if (!isOpen) renderSrcPanel();
-}
+
 function applySrcSettings() {
   const checked = SOURCE_GROUPS.flatMap(g => g.sources)
     .filter(s => document.getElementById('src_' + s.id)?.checked)

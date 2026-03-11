@@ -139,7 +139,7 @@
 <main>
   <div class="page-title">Legal</div>
   <div class="page-heading">利用規約・免責事項</div>
-  <div class="page-meta">最終更新：2025年1月　／　BriefBoard</div>
+  <div class="page-meta">最終更新：2026年3月　／　BriefBoard</div>
 
   <!-- 1. サービス概要 -->
   <div class="section">
@@ -154,8 +154,8 @@
     <p>本サービスに表示されるニュース見出し・記事情報の著作権は、それぞれの配信元メディアに帰属します。</p>
     <p>本サービスは記事の見出しおよびリンクのみを表示し、記事本文の転載・複製は行っていません。各見出しをクリックすると、配信元メディアのウェブサイトへ直接遷移します。</p>
     <div class="notice">
-      <strong>著作権に関するお問い合わせ：</strong><br>
-      配信元メディアによる見出し表示の中止要請があった場合は、速やかに対応いたします。ご連絡はサービス管理者までお願いします。
+      <strong>著作権に関する対応：</strong><br>
+      配信元メディアによる見出し表示の中止要請があった場合は、速やかに対応いたします。
     </div>
   </div>
 
@@ -188,8 +188,13 @@
           <td>各メディアの利用規約に準拠</td>
         </tr>
         <tr>
+          <td>Cloudflare Workers</td>
+          <td>自前CORSプロキシ（RSS取得中継）</td>
+          <td><a href="https://www.cloudflare.com/privacypolicy/" target="_blank">Cloudflareプライバシーポリシー</a></td>
+        </tr>
+        <tr>
           <td>allorigins.win / corsproxy.io</td>
-          <td>CORSプロキシ（RSS取得補助）</td>
+          <td>CORSプロキシ（フォールバック用）</td>
           <td>各サービスの利用規約に準拠</td>
         </tr>
       </tbody>
@@ -208,6 +213,7 @@
   <div class="section">
     <div class="section-title">05 — プライバシー・データ管理</div>
     <p>本サービスはサーバーサイドでユーザーデータを収集・保存しません。キーワード設定・既読履歴・ソース設定はすべてお使いのブラウザのlocalStorageにのみ保存されます。</p>
+    <p>RSS取得の中継にCloudflare Workersを利用しています。リクエストはCloudflareのインフラを経由しますが、ユーザーの個人情報・閲覧履歴をWorker側で記録・保存する処理は行っていません。</p>
     <p>本サービス自体に広告ネットワーク・トラッキングコードは含まれていません。</p>
   </div>
 

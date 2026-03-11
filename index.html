@@ -515,142 +515,6 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
   border-color:var(--accent);
 }
 
-/* ── スマホ並び替えモーダル ── */
-.sort-modal-overlay{
-  display:none;position:fixed;inset:0;z-index:1000;
-  background:rgba(12,12,15,0.92);backdrop-filter:blur(8px);
-  flex-direction:column;align-items:stretch;
-}
-.sort-modal-overlay.open{display:flex;}
-.sort-modal-header{
-  padding:16px 20px 12px;
-  display:flex;align-items:center;justify-content:space-between;
-  border-bottom:1px solid var(--border);flex-shrink:0;
-}
-.sort-modal-title{
-  font-family:var(--mono);font-size:11px;letter-spacing:2px;
-  text-transform:uppercase;color:var(--accent);
-}
-.sort-modal-hint{
-  font-family:var(--mono);font-size:9px;color:var(--text-muted);
-  padding:8px 20px;flex-shrink:0;
-}
-.sort-modal-list{
-  flex:1;overflow-y:auto;padding:8px 16px;
-  display:flex;flex-direction:column;gap:8px;
-}
-.sort-modal-item{
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:6px;padding:14px 16px;
-  display:flex;align-items:center;gap:12px;
-  cursor:grab;user-select:none;touch-action:none;
-}
-.sort-modal-item:active{cursor:grabbing;}
-.sort-modal-item.sortable-ghost{
-  opacity:0.3;border:1px dashed var(--accent);
-  background:rgba(226,201,126,0.06);
-}
-.sort-modal-item.sortable-drag{
-  opacity:1;box-shadow:0 4px 20px rgba(0,0,0,0.6);
-  border-color:var(--accent);
-  /* ドラッグ中は元のサイズを維持 */
-  height:52px !important;max-height:52px !important;
-  overflow:hidden;
-}
-.sort-modal-grip{
-  font-size:16px;color:var(--text-dim);flex-shrink:0;
-}
-.sort-modal-num{
-  font-family:var(--mono);font-size:9px;color:var(--text-dim);
-  width:16px;flex-shrink:0;text-align:center;
-}
-.sort-modal-kw{
-  flex:1;font-size:14px;color:var(--text);font-weight:500;
-}
-.sort-modal-done{
-  margin:12px 16px;padding:14px;
-  background:var(--accent);color:var(--bg);
-  border:none;border-radius:6px;font-family:var(--mono);
-  font-size:11px;letter-spacing:2px;text-transform:uppercase;
-  font-weight:600;cursor:pointer;flex-shrink:0;
-}
-.sort-modal-done:active{opacity:0.8;}
-/* スマホ並び替えボタン */
-.btn-sort-sp{
-  display:none;
-  font-family:var(--mono);font-size:10px;color:var(--text-muted);
-  background:none;border:1px solid var(--border2);border-radius:3px;
-  padding:4px 10px;cursor:pointer;letter-spacing:0.5px;
-}
-.btn-sort-sp:active{color:var(--accent);border-color:var(--accent);}
-@media(max-width:768px){
-  .btn-sort-sp{display:inline-block;}
-}
-
-/* ── スマホ並び替えモーダル ── */
-.sort-modal-overlay{
-  display:none;position:fixed;inset:0;z-index:9000;
-  background:rgba(12,12,15,0.92);backdrop-filter:blur(8px);
-  flex-direction:column;align-items:stretch;
-}
-.sort-modal-overlay.open{display:flex;}
-.sort-modal{
-  background:var(--surface);border-top:1px solid var(--border);
-  border-radius:16px 16px 0 0;
-  padding:0 0 env(safe-area-inset-bottom,16px);
-  margin-top:auto;max-height:85vh;display:flex;flex-direction:column;
-}
-.sort-modal-header{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:16px 20px 12px;border-bottom:1px solid var(--border);flex-shrink:0;
-}
-.sort-modal-title{
-  font-family:var(--mono);font-size:11px;letter-spacing:2px;
-  text-transform:uppercase;color:var(--accent);
-}
-.sort-modal-close{
-  background:none;border:1px solid var(--border);color:var(--text-muted);
-  font-family:var(--mono);font-size:10px;padding:5px 12px;
-  border-radius:3px;cursor:pointer;letter-spacing:1px;
-}
-.sort-modal-list{
-  overflow-y:auto;flex:1;padding:8px 12px;
-  -webkit-overflow-scrolling:touch;
-}
-.sort-modal-item{
-  display:flex;align-items:center;gap:12px;
-  background:var(--surface2);border:1px solid var(--border);
-  border-radius:6px;padding:14px 16px;margin-bottom:8px;
-  cursor:grab;user-select:none;-webkit-user-select:none;
-  transition:background 0.15s;touch-action:none;
-}
-.sort-modal-item.sortable-ghost{
-  opacity:0.35;border:1px dashed var(--accent);
-  background:rgba(226,201,126,0.06);
-}
-.sort-modal-item.sortable-drag{
-  opacity:1;box-shadow:0 4px 20px rgba(0,0,0,0.5);
-  border-color:var(--accent);background:var(--surface2);
-  transform:scale(1.02);
-}
-.sort-modal-handle{
-  font-size:16px;color:var(--text-dim);flex-shrink:0;line-height:1;
-}
-.sort-modal-num{
-  font-family:var(--mono);font-size:9px;color:var(--text-dim);
-  width:16px;flex-shrink:0;text-align:center;
-}
-.sort-modal-kw{
-  font-family:var(--mono);font-size:13px;color:var(--text);
-  flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-}
-.sort-modal-done{
-  margin:12px 16px 4px;padding:14px;
-  background:var(--accent);color:var(--bg);
-  border:none;border-radius:6px;font-family:var(--mono);
-  font-size:11px;letter-spacing:2px;text-transform:uppercase;
-  cursor:pointer;font-weight:600;flex-shrink:0;
-}
 /* 並び替えボタン（スマホのカラムエリアヘッダ） */
 .sp-sort-btn{
   display:none;
@@ -669,9 +533,74 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
     width:calc(95vw - 24px) !important;
   }
 }
-@media(min-width:769px){
-  .sort-modal-overlay{display:none!important;}
+
+/* ── スマホ並び替えモーダル ── */
+.btn-sort-sp{
+  display:none;
+  font-size:11px;padding:3px 8px;border-radius:4px;
+  border:1px solid var(--border2);background:transparent;
+  color:var(--text-muted);cursor:pointer;white-space:nowrap;
 }
+.btn-sort-sp:active{color:var(--accent);border-color:var(--accent);}
+@media(max-width:768px){.btn-sort-sp{display:inline-block;}}
+.sp-sort-overlay{
+  display:none;position:fixed;inset:0;z-index:9999;
+  background:rgba(0,0,0,0.7);
+  flex-direction:column;align-items:stretch;
+}
+.sp-sort-overlay.open{display:flex;}
+.sp-sort-box{
+  background:var(--surface);
+  border-radius:16px 16px 0 0;
+  margin-top:auto;
+  padding:0 0 env(safe-area-inset-bottom,12px);
+  max-height:85vh;display:flex;flex-direction:column;
+}
+.sp-sort-hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px 8px;
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.sp-sort-title{font-size:15px;font-weight:600;color:var(--text);}
+.sp-sort-close{
+  background:none;border:none;color:var(--text-muted);
+  font-size:20px;cursor:pointer;padding:4px 8px;line-height:1;
+}
+.sp-sort-hint{
+  font-size:11px;color:var(--text-dim);padding:8px 20px 4px;
+  flex-shrink:0;
+}
+.sp-sort-list{
+  flex:1;overflow-y:auto;padding:8px 0;
+}
+.sp-sort-item{
+  display:flex;align-items:center;gap:12px;
+  padding:14px 20px;
+  cursor:grab;
+  touch-action:none;
+  border-bottom:1px solid var(--border);
+  background:var(--surface);
+}
+.sp-sort-item:last-child{border-bottom:none;}
+.sp-sort-item.sortable-ghost{opacity:0.3;background:var(--surface2);}
+.sp-sort-item.sortable-drag{
+  opacity:1;box-shadow:0 4px 20px rgba(0,0,0,0.4);
+  background:var(--surface2);border-radius:6px;
+}
+.sp-sort-grip{font-size:20px;color:var(--text-dim);flex-shrink:0;line-height:1;}
+.sp-sort-num{
+  font-size:11px;color:var(--text-dim);
+  min-width:20px;text-align:right;flex-shrink:0;
+}
+.sp-sort-kw{flex:1;font-size:14px;color:var(--text);}
+.sp-sort-done{
+  margin:12px 16px;padding:14px;border-radius:8px;
+  background:var(--accent);border:none;
+  font-size:15px;font-weight:600;color:#111;cursor:pointer;
+  flex-shrink:0;
+}
+.sp-sort-done:active{opacity:0.85;}
 </style>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1245,52 +1174,58 @@ function renderColumns() {
   }
 }
 
+
+
 // ── スマホ並び替えモーダル ──
-let _modalSortable = null;
+let _spSortable = null;
 
 function openSortModal() {
-  const list = document.getElementById('sortModalList');
+  const list = document.getElementById('spSortList');
   if (!list) return;
-  list.innerHTML = keywords.map((kw, i) =>
-    `<div class="sort-modal-item"><span class="sort-modal-num">${i+1}</span><span class="sort-modal-grip">⠿</span><span class="sort-modal-kw">${esc(kw)}</span></div>`
-  ).join('');
-  if (_modalSortable) { try { _modalSortable.destroy(); } catch(e){} _modalSortable = null; }
+  list.innerHTML = keywords.map((kw, i) => `
+    <div class="sp-sort-item">
+      <span class="sp-sort-num">${i+1}</span>
+      <span class="sp-sort-grip">⠿</span>
+      <span class="sp-sort-kw">${esc(kw)}</span>
+    </div>`).join('');
+  if (_spSortable) { try{_spSortable.destroy();}catch(e){} _spSortable = null; }
   if (typeof Sortable !== 'undefined') {
-    _modalSortable = new Sortable(list, {
-      animation: 180,
+    _spSortable = new Sortable(list, {
+      animation: 200,
       ghostClass: 'sortable-ghost',
       dragClass: 'sortable-drag',
+      delay: 50,
+      delayOnTouchOnly: false,
       forceFallback: true,
-      fallbackTolerance: 3,
-      onStart: function(evt) { evt.item.style.height = evt.item.offsetHeight + 'px'; },
-      onEnd: function(evt) {
-        evt.item.style.height = '';
-        list.querySelectorAll('.sort-modal-item').forEach(function(el, i) {
-          el.querySelector('.sort-modal-num').textContent = i + 1;
+      fallbackTolerance: 5,
+      onEnd: function() {
+        list.querySelectorAll('.sp-sort-item').forEach(function(el, i) {
+          el.querySelector('.sp-sort-num').textContent = i + 1;
         });
       }
     });
   }
-  const modal = document.getElementById('sortModal');
-  if (modal) { modal.classList.add('open'); document.body.style.overflow = 'hidden'; }
+  document.getElementById('spSortOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
 }
 
 function closeSortModal() {
-  const modal = document.getElementById('sortModal');
-  const list  = document.getElementById('sortModalList');
-  if (!modal || !list) return;
-  const newOrder = Array.from(list.querySelectorAll('.sort-modal-item'))
-    .map(function(el){ return el.querySelector('.sort-modal-kw').textContent; });
+  const list = document.getElementById('spSortList');
+  const overlay = document.getElementById('spSortOverlay');
+  if (!list || !overlay) return;
+  const newOrder = Array.from(list.querySelectorAll('.sp-sort-kw'))
+    .map(function(el){ return el.textContent; });
   if (JSON.stringify(newOrder) !== JSON.stringify(keywords)) {
     keywords = newOrder;
     localStorage.setItem('bb_kw', JSON.stringify(keywords));
     renderTags();
     renderColumns();
   }
-  modal.classList.remove('open');
+  overlay.classList.remove('open');
   document.body.style.overflow = '';
-  if (_modalSortable) { try { _modalSortable.destroy(); } catch(e){} _modalSortable = null; }
+  if (_spSortable) { try{_spSortable.destroy();}catch(e){} _spSortable = null; }
 }
+
 
 function updateMoveButtons() {
   const cols = document.querySelectorAll('#colsGrid .col');
@@ -1970,20 +1905,18 @@ function togglePanel(bodyId, arrowId) {
 function toggleSrcPanel(){ togglePanel('srcPanelBody','srcPanelArrow'); }
 function toggleArchiveSp(){ togglePanel('archiveBody','archArrow'); }
 </script>
-  <div class="sort-modal-hint">⠿ をドラッグして順番を入れ替え</div>
-  <div class="sort-modal-list" id="sortModalList"></div>
-  <button class="sort-modal-done" onclick="closeSortModal()">✓ 完了</button>
-</div>
 
 <!-- ── スマホ並び替えモーダル ── -->
-<div class="sort-modal-overlay" id="sortModal" onclick="if(event.target===this)closeSortModal()">
-  <div class="sort-modal-header">
-    <span class="sort-modal-title">キーワードを並び替え</span>
-    <button class="sort-modal-close-btn" onclick="closeSortModal()">✕</button>
+<div class="sp-sort-overlay" id="spSortOverlay" onclick="if(event.target===this)closeSortModal()">
+  <div class="sp-sort-box">
+    <div class="sp-sort-hdr">
+      <span class="sp-sort-title">⠿ キーワードを並び替え</span>
+      <button class="sp-sort-close" onclick="closeSortModal()">✕</button>
+    </div>
+    <p class="sp-sort-hint">⠿ をドラッグして順番を変えてください</p>
+    <div class="sp-sort-list" id="spSortList"></div>
+    <button class="sp-sort-done" onclick="closeSortModal()">✓ 完了</button>
   </div>
-  <p class="sort-modal-hint">⠿ をドラッグして順番を入れ替え</p>
-  <div class="sort-modal-list" id="sortModalList"></div>
-  <button class="sort-modal-done" onclick="closeSortModal()">✓ 完了</button>
 </div>
 </body>
 </html>

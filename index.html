@@ -470,10 +470,49 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
   letter-spacing:0.5px;user-select:none;flex-shrink:0;
   padding:0 2px;
 }
-/* スマホ：長押し中のフィードバック */
-@media(max-width:768px){
-  .col-head{-webkit-user-select:none;user-select:none;}
-  .col.sortable-chosen .col-head{background:var(--surface2);border-radius:4px;}
+/* ── ドラッグ時コンパクトモード ── */
+.columns-grid.dragging-mode{
+  align-items:stretch;
+}
+.columns-grid.dragging-mode .col{
+  width:var(--drag-col-w, 80px) !important;
+  min-width:0 !important;
+  max-width:none !important;
+  transition:width 0.18s ease;
+  flex-shrink:0;
+}
+.columns-grid.dragging-mode .col-body{
+  display:none !important;
+}
+.columns-grid.dragging-mode .col-head{
+  border-radius:4px;
+  padding:10px 8px;
+  min-height:48px;
+  justify-content:center;
+}
+.columns-grid.dragging-mode .col-kw{
+  font-size:10px;
+  max-width:none;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  text-align:center;
+  flex:1;
+}
+.columns-grid.dragging-mode .col-move-btn,
+.columns-grid.dragging-mode .col-count,
+.columns-grid.dragging-mode .col-drag-hint{
+  display:none !important;
+}
+.columns-grid.dragging-mode .col.sortable-ghost{
+  opacity:0.4;
+  border:1px dashed var(--accent);
+  background:rgba(226,201,126,0.08);
+}
+.columns-grid.dragging-mode .col.sortable-drag{
+  opacity:1;
+  box-shadow:0 4px 16px rgba(0,0,0,0.5);
+  border-color:var(--accent);
 }
 </style>
 <meta name="mobile-web-app-capable" content="yes">
@@ -1019,8 +1058,21 @@ function renderColumns() {
       scrollSensitivity: 80,
       scrollSpeed: 12,
       bubbleScroll: true,
-      forceFallback: false,   // ブラウザネイティブDnDを使用（位置ずれ防止）
+      forceFallback: false,
+      onStart: function() {
+        const sidebar = document.querySelector('.sidebar');
+        const sidebarW = sidebar ? sidebar.offsetWidth : 260;
+        const gap = 12;
+        const padding = 24;
+        const count = Math.max(keywords.length, 1);
+        const available = window.innerWidth - sidebarW - padding;
+        const colW = Math.max(60, Math.floor((available - gap * (count - 1)) / count));
+        grid.style.setProperty('--drag-col-w', colW + 'px');
+        grid.classList.add('dragging-mode');
+      },
       onEnd: function(evt) {
+        grid.classList.remove('dragging-mode');
+        grid.style.removeProperty('--drag-col-w');
         if (evt.oldIndex === evt.newIndex) return;
         const moved = keywords.splice(evt.oldIndex, 1)[0];
         keywords.splice(evt.newIndex, 0, moved);

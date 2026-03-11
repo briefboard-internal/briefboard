@@ -1446,6 +1446,7 @@ function boldKeywords(title, ownKw) {
   applyBold(ownTerms,   'kw-bold');
   return result;
 }
+function esc(s){return String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function escAttr(s){return String(s||'').replace(/'/g,"\\'");}
 
 // 翻訳ポップアップ開閉

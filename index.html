@@ -717,7 +717,7 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
 
 <footer>
   <div class="ft">
-    <div class="ft-txt">BriefBoard &nbsp;·&nbsp; <a href="terms.html" style="color:var(--text-dim);text-decoration:none;font-family:var(--mono);font-size:10px;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-dim)'">利用規約・免責事項</a></div>
+    <div class="ft-txt">BriefBoard &nbsp;·&nbsp; <a href="terms.html" style="color:var(--text-dim);text-decoration:none;font-family:var(--mono);font-size:10px;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-dim)'">利用規約・免責事項</a> &nbsp;·&nbsp; <a href="manual.html" style="color:var(--text-dim);text-decoration:none;font-family:var(--mono);font-size:10px;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-dim)'">使い方</a></div>
   </div>
 </footer>
 
@@ -1066,6 +1066,11 @@ function init() {
 // ══════════════════════════════════════════════
 //  KEYWORDS
 // ══════════════════════════════════════════════
+function updateSwipeHint() {
+  const hint = document.getElementById('swipeHint');
+  if (!hint) return;
+  hint.style.display = keywords.length > 1 ? 'block' : 'none';
+}
 function addKw() {
   const el = document.getElementById('kwInput');
   // カンマ・読点のみで分割（スペースはAND検索として単語内に保持）

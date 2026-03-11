@@ -142,10 +142,6 @@ header{border-bottom:1px solid var(--border);padding:12px 0;position:sticky;top:
 .cols-grid-outer{
   overflow-x:auto;
   overflow-y:visible;
-  /* 上下反転でスクロールバーを上に */
-  transform:rotateX(180deg);
-  -webkit-transform:rotateX(180deg);
-  /* スクロールバーをテーマカラーに */
   scrollbar-width:thin;
   scrollbar-color:var(--border2) var(--surface2);
   padding-bottom:2px;
@@ -161,14 +157,11 @@ header{border-bottom:1px solid var(--border);padding:12px 0;position:sticky;top:
   padding:4px 0 12px;
   -webkit-overflow-scrolling:touch;
   align-items:start;
-  /* 再反転して正常表示 */
-  transform:rotateX(180deg);
-  -webkit-transform:rotateX(180deg);
 }
 @media(max-width:600px){
-  .cols-grid-outer{transform:none;-webkit-transform:none;scrollbar-width:none;}
+  .cols-grid-outer{scrollbar-width:none;}
   .cols-grid-outer::-webkit-scrollbar{display:none;}
-  .columns-grid{transform:none;-webkit-transform:none;gap:13px;padding:4px 0 12px;}
+  .columns-grid{gap:13px;padding:4px 0 12px;}
 }
 
 /* スクロールバーをPCでも目立つように */
@@ -455,6 +448,18 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
   color:var(--accent);
 }
 .n-card.read .kw-bold{color:var(--text-muted);}
+
+/* ── ドラッグ&ドロップ ── */
+.col{cursor:default;}
+.col-head{cursor:grab;}
+.col-head:active{cursor:grabbing;}
+.col.sortable-ghost{opacity:0.35;background:var(--surface2);}
+.col.sortable-drag{opacity:0.95;box-shadow:0 8px 32px rgba(0,0,0,0.5);cursor:grabbing!important;}
+.col-drag-hint{
+  font-family:var(--mono);font-size:9px;color:var(--text-dim);
+  letter-spacing:0.5px;user-select:none;flex-shrink:0;
+  padding:0 2px;
+}
 </style>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -462,6 +467,7 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
 <meta name="apple-mobile-web-app-title" content="BriefBoard">
 <meta name="theme-color" content="#0c0c0f">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%230c0c0f'/><text y='68' x='8' font-size='62' font-family='monospace' fill='%23e2c97e'>B</text></svg>">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
 </head>
 <body>
 
@@ -947,6 +953,7 @@ async function loadAll() {
 function renderColumns() {
   const grid = document.getElementById('colsGrid');
   const info = document.getElementById('colsInfo');
+  if (window._sortable) { window._sortable.destroy(); window._sortable = null; }
   grid.innerHTML = '';
 
   if (!keywords.length) {
@@ -957,10 +964,36 @@ function renderColumns() {
 
   info.textContent = `${keywords.length} 列`;
   keywords.forEach((kw, i) => {
-    const col = buildCol(kw, [], i); // 空で描画してから非同期取得
+    const col = buildCol(kw, [], i);
     col.style.animationDelay = `${i * 55}ms`;
     grid.appendChild(col);
-    fetchByKeyword(kw, i); // Google News RSS で過去記事取得
+    fetchByKeyword(kw, i);
+  });
+
+  if (typeof Sortable !== 'undefined') {
+    window._sortable = new Sortable(grid, {
+      animation: 150,
+      handle: '.col-head',
+      ghostClass: 'sortable-ghost',
+      dragClass: 'sortable-drag',
+      onEnd: function(evt) {
+        if (evt.oldIndex === evt.newIndex) return;
+        const moved = keywords.splice(evt.oldIndex, 1)[0];
+        keywords.splice(evt.newIndex, 0, moved);
+        localStorage.setItem('bb_kw', JSON.stringify(keywords));
+        renderTags();
+        updateMoveButtons();
+      }
+    });
+  }
+}
+
+function updateMoveButtons() {
+  const cols = document.querySelectorAll('#colsGrid .col');
+  cols.forEach((col, i) => {
+    const btns = col.querySelectorAll('.col-move-btn');
+    if (btns[0]) btns[0].disabled = i === 0;
+    if (btns[1]) btns[1].disabled = i === cols.length - 1;
   });
 }
 
@@ -1130,9 +1163,15 @@ function buildCol(kw, articles, idx) {
   kwRow.appendChild(kwSpan);
   kwRow.appendChild(btnR);
 
+  const dragHint = document.createElement('span');
+  dragHint.className = 'col-drag-hint';
+  dragHint.textContent = '⠿';
+  dragHint.title = 'ドラッグして並び替え';
+
   const rightRow = document.createElement('div');
   rightRow.style.cssText = 'display:flex;align-items:center;gap:4px;flex-shrink:0;';
   rightRow.appendChild(countSpan);
+  rightRow.appendChild(dragHint);
 
   head.appendChild(kwRow);
   head.appendChild(rightRow);

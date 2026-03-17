@@ -1026,12 +1026,16 @@ async function _scholarDrain() {
   if (_scholarBusy || !_scholarQueue.length) return;
   _scholarBusy = true;
   const {query, resolve} = _scholarQueue.shift();
-  const result = await _scholarFetch(query);
-  resolve(result);
-  // 次のリクエストまで少し待つ（レート制限の余裕）
-  await new Promise(r => setTimeout(r, 500));
-  _scholarBusy = false;
-  _scholarDrain();
+  try {
+    const result = await _scholarFetch(query);
+    resolve(result);
+  } catch(e) {
+    resolve([]); // 例外でも必ず resolve して詰まらせない
+  } finally {
+    await new Promise(r => setTimeout(r, 400));
+    _scholarBusy = false;
+    _scholarDrain(); // 次のキューを処理
+  }
 }
 async function _scholarFetch(query) {
   const scholarCacheKey = 'scholar|' + query.toLowerCase();
@@ -1039,30 +1043,41 @@ async function _scholarFetch(query) {
 
   // クエリ正規化：OR分解 → 英語alias展開 → 日本語除去
   const isJapanese = s => /[\u3000-\u9FFF\uF900-\uFAFF]/.test(s);
-  const rawTerms   = query.split(/\s+OR\s+/i).map(t => t.trim()).filter(Boolean);
-  const enTerms    = [];
+  const rawTerms = query.split(/\s+OR\s+/i).map(t => t.trim()).filter(Boolean);
+  const enTerms  = [];
   rawTerms.forEach(term => {
-    const aliases = [...new Set(getAliases(term).concat(getAliases(term.toLowerCase())))];
-    const en      = aliases.filter(a => !isJapanese(a) && a.length >= 2);
-    if (en.length) enTerms.push(...en);
-    else if (!isJapanese(term) && term.length >= 2) enTerms.push(term);
+    if (!isJapanese(term)) {
+      // 英語ならそのまま優先追加
+      enTerms.push(term);
+    } else {
+      // 日本語なら英語aliasに変換
+      const aliases = [...new Set(getAliases(term).concat(getAliases(term.toLowerCase())))];
+      const en = aliases.filter(a => !isJapanese(a) && a.length >= 2);
+      enTerms.push(...en);
+    }
   });
-  const deduped    = [...new Set(enTerms)].slice(0, 4);
+  // 重複除去・最大3語（多すぎるとノイズになる）
+  const deduped    = [...new Set(enTerms)].filter(t => t.length >= 2).slice(0, 3);
   const finalQuery = deduped.length ? deduped.join(' ') : query;
 
-  // sort パラメータは /paper/search では無効 → 省略（デフォルトで関連度順）
-  const apiUrl = `https://api.semanticscholar.org/graph/v1/paper/search`
+  // 直近3か月に絞り、新しい順（bulkエンドポイントでsort対応）
+  const d3m = new Date(); d3m.setMonth(d3m.getMonth() - 3);
+  const fromDate = `${d3m.getFullYear()}-${String(d3m.getMonth()+1).padStart(2,'0')}-01`;
+
+  // /paper/search/bulk はsort対応・大量取得向き
+  const apiUrl = `https://api.semanticscholar.org/graph/v1/paper/search/bulk`
     + `?query=${encodeURIComponent(finalQuery)}`
+    + `&publicationDateOrYear=${fromDate}:`
+    + `&sort=publicationDate:desc`
     + `&limit=50`
-    + `&fields=title,authors,year,externalIds,openAccessPdf`;
+    + `&fields=title,authors,year,publicationDate,externalIds,openAccessPdf`;
 
   for (let attempt = 0; attempt < 4; attempt++) {
     try {
       if (attempt > 0) await new Promise(r => setTimeout(r, 1000 * attempt));
       const res = await fetch(apiUrl, {signal: AbortSignal.timeout(15000)});
-      if (res.status === 429) continue;
+      if (res.status === 429) { continue; }
       if (!res.ok) {
-        // デバッグ用：失敗ステータスをログ
         console.warn('Scholar API error:', res.status, finalQuery);
         break;
       }
@@ -1082,18 +1097,19 @@ async function _scholarFetch(query) {
             || `https://www.semanticscholar.org/paper/${p.paperId}`;
           const author  = p.authors?.[0]?.name || '';
           const year    = p.year ? String(p.year) : '';
+          const pubDate = p.publicationDate || (year ? `${year}-06-01` : '');
           return {
             title:   p.title,
             link,
             source:  author ? `${author}${year ? ' ('+year+')' : ''}` : 'Semantic Scholar',
-            pubDate: year ? `${year}-01-01` : '',
+            pubDate,
             flag:    '🎓',
           };
         });
       gnewsCache[scholarCacheKey] = items;
       return items;
     } catch(e) {
-      console.warn('Scholar fetch error:', e.message);
+      console.warn('Scholar fetch error attempt', attempt, ':', e.message);
     }
   }
   return gnewsCache[scholarCacheKey] || [];

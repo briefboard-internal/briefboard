@@ -463,11 +463,14 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
 .col-head:active{cursor:grabbing;}
 .col.sortable-ghost{opacity:0.35;background:var(--surface2);}
 .col.sortable-drag{opacity:0.95;box-shadow:0 8px 32px rgba(0,0,0,0.5);cursor:grabbing!important;}
-.col-drag-hint{
-  font-family:var(--mono);font-size:9px;color:var(--text-dim);
-  letter-spacing:0.5px;user-select:none;flex-shrink:0;
-  padding:0 2px;
+.col-close-btn{
+  background:none;border:none;color:var(--text-dim);
+  font-size:14px;line-height:1;padding:2px 4px;cursor:pointer;
+  flex-shrink:0;border-radius:3px;transition:all 0.15s;
+  -webkit-tap-highlight-color:transparent;
 }
+.col-close-btn:hover{color:#e06c6c;background:rgba(224,108,108,0.12);}
+.col-close-btn:active{color:#e06c6c;}
 /* ── ドラッグ時コンパクトモード ── */
 .columns-grid.dragging-mode{
   align-items:stretch;
@@ -498,7 +501,7 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
   flex:1;
 }
 .columns-grid.dragging-mode .col-count,
-.columns-grid.dragging-mode .col-drag-hint{
+.columns-grid.dragging-mode .col-close-btn{
   display:none !important;
 }
 .columns-grid.dragging-mode .col.sortable-ghost{
@@ -1167,6 +1170,15 @@ function updateSwipeHint() {
   if (!hint) return;
   hint.style.display = keywords.length > 1 ? 'block' : 'none';
 }
+function removeKw(kw) {
+  const i = keywords.indexOf(kw);
+  if (i === -1) return;
+  keywords.splice(i, 1);
+  localStorage.setItem('bb_kw', JSON.stringify(keywords));
+  renderTags();
+  renderColumns();
+}
+
 function addKw() {
   const el = document.getElementById('kwInput');
   // カンマ・読点のみで分割（スペースはAND検索として単語内に保持）
@@ -1468,15 +1480,19 @@ function buildCol(kw, articles, idx) {
   kwRow.style.cssText = 'display:flex;align-items:center;gap:4px;min-width:0;flex:1;overflow:hidden';
   kwRow.appendChild(kwSpan);
 
-  const dragHint = document.createElement('span');
-  dragHint.className = 'col-drag-hint';
-  dragHint.textContent = '⠿';
-  dragHint.title = 'ドラッグして並び替え';
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'col-close-btn';
+  closeBtn.textContent = '✕';
+  closeBtn.title = 'このキーワードを削除';
+  closeBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    removeKw(kw);
+  });
 
   const rightRow = document.createElement('div');
   rightRow.style.cssText = 'display:flex;align-items:center;gap:4px;flex-shrink:0;';
   rightRow.appendChild(countSpan);
-  rightRow.appendChild(dragHint);
+  rightRow.appendChild(closeBtn);
 
   head.appendChild(kwRow);
   head.appendChild(rightRow);

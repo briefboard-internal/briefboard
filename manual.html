@@ -16,231 +16,72 @@
     --serif:'Georgia','Noto Serif JP',serif;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{
-    background:var(--bg);color:var(--text);
-    font-family:var(--sans);min-height:100vh;
-    line-height:1.8;
-  }
-  body::before{
-    content:'';position:fixed;inset:0;
-    background-image:linear-gradient(var(--border) 1px,transparent 1px),
-                     linear-gradient(90deg,var(--border) 1px,transparent 1px);
-    background-size:48px 48px;opacity:0.15;pointer-events:none;z-index:0;
-  }
-
-  /* ── HEADER ── */
-  header{
-    border-bottom:1px solid var(--border);padding:12px 24px;
-    position:sticky;top:0;
-    background:rgba(12,12,15,0.96);backdrop-filter:blur(16px);z-index:200;
-    display:flex;align-items:center;justify-content:space-between;
-  }
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;line-height:1.8;}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:48px 48px;opacity:0.15;pointer-events:none;z-index:0;}
+  header{border-bottom:1px solid var(--border);padding:12px 24px;position:sticky;top:0;background:rgba(12,12,15,0.96);backdrop-filter:blur(16px);z-index:200;display:flex;align-items:center;justify-content:space-between;}
   .logo{display:flex;flex-direction:column;gap:2px;text-decoration:none;}
   .logo-mark{font-family:var(--mono);font-size:17px;font-weight:500;color:var(--accent);letter-spacing:-1px;}
   .logo-sub{font-family:var(--mono);font-size:9px;color:var(--text-muted);letter-spacing:1px;}
-  .back-btn{
-    font-family:var(--mono);font-size:10px;color:var(--text-muted);
-    text-decoration:none;border:1px solid var(--border2);
-    padding:5px 12px;border-radius:3px;letter-spacing:1px;
-    text-transform:uppercase;transition:all 0.2s;
-  }
+  .back-btn{font-family:var(--mono);font-size:10px;color:var(--text-muted);text-decoration:none;border:1px solid var(--border2);padding:5px 12px;border-radius:3px;letter-spacing:1px;text-transform:uppercase;transition:all 0.2s;}
   .back-btn:hover{color:var(--accent);border-color:var(--accent);}
-
-  /* ── NAV (TOC) ── */
-  .toc-wrap{
-    position:relative;z-index:1;
-    background:var(--surface);border-bottom:1px solid var(--border);
-    padding:10px 24px;overflow-x:auto;white-space:nowrap;
-  }
-  .toc-wrap a{
-    font-family:var(--mono);font-size:10px;color:var(--text-muted);
-    text-decoration:none;margin-right:24px;letter-spacing:0.5px;
-    transition:color 0.15s;
-  }
+  .toc-wrap{position:relative;z-index:1;background:var(--surface);border-bottom:1px solid var(--border);padding:10px 24px;overflow-x:auto;white-space:nowrap;}
+  .toc-wrap a{font-family:var(--mono);font-size:10px;color:var(--text-muted);text-decoration:none;margin-right:24px;letter-spacing:0.5px;transition:color 0.15s;}
   .toc-wrap a:hover{color:var(--accent);}
-
-  /* ── MAIN ── */
-  main{
-    position:relative;z-index:1;
-    max-width:820px;margin:0 auto;
-    padding:48px 24px 100px;
-  }
-  .page-title{
-    font-family:var(--mono);font-size:11px;letter-spacing:3px;
-    text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;
-  }
-  .page-heading{
-    font-size:26px;font-weight:700;color:var(--accent);
-    margin-bottom:4px;letter-spacing:-0.5px;
-  }
-  .page-meta{
-    font-family:var(--mono);font-size:10px;color:var(--text-dim);
-    margin-bottom:48px;
-  }
-
-  /* ── SECTION ── */
-  .section{
-    background:var(--surface);border:1px solid var(--border);
-    border-radius:8px;padding:28px 32px;margin-bottom:20px;
-    scroll-margin-top:80px;
-  }
-  .section-title{
-    font-family:var(--mono);font-size:10px;letter-spacing:2px;
-    text-transform:uppercase;color:var(--accent2);
-    margin-bottom:18px;display:flex;align-items:center;gap:8px;
-  }
+  main{position:relative;z-index:1;max-width:820px;margin:0 auto;padding:48px 24px 100px;}
+  .page-title{font-family:var(--mono);font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;}
+  .page-heading{font-size:26px;font-weight:700;color:var(--accent);margin-bottom:4px;letter-spacing:-0.5px;}
+  .page-meta{font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-bottom:48px;}
+  .section{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:28px 32px;margin-bottom:20px;scroll-margin-top:80px;}
+  .section-title{font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--accent2);margin-bottom:18px;display:flex;align-items:center;gap:8px;}
   .section-title::after{content:'';flex:1;height:1px;background:var(--border);}
-  .section-h2{
-    font-size:18px;font-weight:600;color:var(--text);
-    margin-bottom:16px;display:flex;align-items:center;gap:10px;
-  }
+  .section-h2{font-size:18px;font-weight:600;color:var(--text);margin-bottom:16px;display:flex;align-items:center;gap:10px;}
   .section-h2 .icon{font-size:20px;}
-
-  /* ── FEATURE GRID ── */
-  .feat-grid{
-    display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
-    gap:12px;margin-bottom:4px;
-  }
-  .feat-card{
-    background:var(--surface2);border:1px solid var(--border2);
-    border-radius:6px;padding:16px 18px;
-  }
+  .feat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:4px;}
+  .feat-card{background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:16px 18px;}
   .feat-card .feat-icon{font-size:22px;margin-bottom:8px;display:block;}
-  .feat-card .feat-name{
-    font-size:13px;font-weight:600;color:var(--text);
-    margin-bottom:4px;
-  }
+  .feat-card .feat-name{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;}
   .feat-card .feat-desc{font-size:12px;color:var(--text-muted);line-height:1.7;}
-
-  /* ── STEP LIST ── */
   .steps{list-style:none;counter-reset:step;}
-  .steps li{
-    counter-increment:step;
-    display:flex;gap:14px;align-items:flex-start;
-    padding:12px 0;border-bottom:1px solid var(--border);
-    font-size:13px;color:var(--text-muted);line-height:1.8;
-  }
+  .steps li{counter-increment:step;display:flex;gap:14px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--border);font-size:13px;color:var(--text-muted);line-height:1.8;}
   .steps li:last-child{border-bottom:none;}
-  .steps li::before{
-    content:counter(step);
-    min-width:24px;height:24px;
-    background:var(--accent);color:#111;
-    font-family:var(--mono);font-size:11px;font-weight:700;
-    border-radius:50%;display:flex;align-items:center;justify-content:center;
-    flex-shrink:0;margin-top:2px;
-  }
+  .steps li::before{content:counter(step);min-width:24px;height:24px;background:var(--accent);color:#111;font-family:var(--mono);font-size:11px;font-weight:700;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
   .steps li strong{color:var(--text);}
-
-  /* ── UI LABEL ── */
-  .ui{
-    display:inline-block;
-    background:var(--surface2);border:1px solid var(--border2);
-    border-radius:3px;padding:1px 7px;
-    font-family:var(--mono);font-size:11px;color:var(--accent);
-    white-space:nowrap;
-  }
-  .badge-new{
-    background:var(--accent);color:#111;
-    font-family:var(--mono);font-size:9px;font-weight:700;
-    border-radius:2px;padding:1px 5px;vertical-align:middle;
-  }
-  .badge-flash{color:#ff9500;font-size:13px;vertical-align:middle;}
-
-  /* ── ALIAS TABLE ── */
+  .ui{display:inline-block;background:var(--surface2);border:1px solid var(--border2);border-radius:3px;padding:1px 7px;font-family:var(--mono);font-size:11px;color:var(--accent);white-space:nowrap;}
+  .badge-new{background:var(--accent);color:#111;font-family:var(--mono);font-size:9px;font-weight:700;border-radius:2px;padding:1px 5px;vertical-align:middle;}
   .alias-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:12px;}
-  .alias-table th{
-    font-family:var(--mono);font-size:9px;letter-spacing:1px;text-transform:uppercase;
-    color:var(--text-dim);padding:6px 10px;border-bottom:1px solid var(--border);
-    text-align:left;font-weight:normal;
-  }
-  .alias-table td{
-    color:var(--text-muted);padding:7px 10px;border-bottom:1px solid var(--border);
-    vertical-align:top;line-height:1.7;
-  }
+  .alias-table th{font-family:var(--mono);font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);padding:6px 10px;border-bottom:1px solid var(--border);text-align:left;font-weight:normal;}
+  .alias-table td{color:var(--text-muted);padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:top;line-height:1.7;}
   .alias-table tr:last-child td{border-bottom:none;}
   .alias-table td:first-child{color:var(--accent);font-weight:600;white-space:nowrap;font-family:var(--mono);}
   .alias-table td:nth-child(2){color:var(--text);white-space:nowrap;}
-
-  /* ── NOTE BOX ── */
-  .note{
-    background:rgba(226,201,126,0.06);border:1px solid rgba(226,201,126,0.2);
-    border-radius:4px;padding:12px 16px;margin-top:14px;
-    font-size:12px;color:var(--text-muted);line-height:1.8;
-  }
+  .note{background:rgba(226,201,126,0.06);border:1px solid rgba(226,201,126,0.2);border-radius:4px;padding:12px 16px;margin-top:14px;font-size:12px;color:var(--text-muted);line-height:1.8;}
   .note strong{color:var(--accent);}
-  .note-green{
-    background:rgba(111,168,130,0.08);border:1px solid rgba(111,168,130,0.25);
-    border-radius:4px;padding:12px 16px;margin-top:14px;
-    font-size:12px;color:var(--text-muted);line-height:1.8;
-  }
+  .note-green{background:rgba(111,168,130,0.08);border:1px solid rgba(111,168,130,0.25);border-radius:4px;padding:12px 16px;margin-top:14px;font-size:12px;color:var(--text-muted);line-height:1.8;}
   .note-green strong{color:var(--accent2);}
-
-  /* ── PROSE ── */
   .prose{font-size:13px;color:var(--text-muted);line-height:1.9;margin-bottom:14px;}
   .prose:last-child{margin-bottom:0;}
   .prose strong{color:var(--text);}
   .prose a{color:var(--accent);text-decoration:none;}
   .prose a:hover{text-decoration:underline;}
-
-  /* ── KW HIGHLIGHT DEMO ── */
-  .demo-card{
-    background:var(--surface2);border:1px solid var(--border2);
-    border-radius:6px;padding:14px 16px;margin-top:12px;
-    font-family:var(--serif);font-size:13px;line-height:1.7;color:var(--text-muted);
-  }
-  .demo-card .kw-own{
-    font-weight:700;color:var(--accent);
-    background:rgba(226,201,126,0.15);border-radius:2px;padding:0 2px;
-  }
+  .demo-card{background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:14px 16px;margin-top:12px;font-family:var(--serif);font-size:13px;line-height:1.7;color:var(--text-muted);}
+  .demo-card .kw-own{font-weight:700;color:var(--accent);background:rgba(226,201,126,0.15);border-radius:2px;padding:0 2px;}
   .demo-card .kw-other{font-weight:700;color:var(--accent2);}
   .demo-card.cooccur{border-left:3px solid var(--accent);background:rgba(226,201,126,0.04);}
-
-  /* ── SHORTCUT TABLE ── */
   .shortcut-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:12px;}
-  .shortcut-table td{
-    padding:8px 12px;border-bottom:1px solid var(--border);
-    color:var(--text-muted);vertical-align:middle;
-  }
+  .shortcut-table td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--text-muted);vertical-align:middle;}
   .shortcut-table tr:last-child td{border-bottom:none;}
-  .shortcut-table td:first-child{
-    width:40%;color:var(--text);font-weight:500;
-  }
-
-  /* ── SOURCE GROUPS ── */
+  .shortcut-table td:first-child{width:40%;color:var(--text);font-weight:500;}
   .src-group{margin-bottom:16px;}
-  .src-group-label{
-    font-family:var(--mono);font-size:10px;color:var(--text-dim);
-    letter-spacing:1px;margin-bottom:8px;padding-bottom:4px;
-    border-bottom:1px solid var(--border);
-  }
+  .src-group-label{font-family:var(--mono);font-size:10px;color:var(--text-dim);letter-spacing:1px;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--border);}
   .src-pills{display:flex;flex-wrap:wrap;gap:6px;}
-  .src-pill{
-    background:var(--surface2);border:1px solid var(--border2);
-    border-radius:4px;padding:5px 10px;font-size:11px;
-    color:var(--text-muted);line-height:1.4;
-  }
+  .src-pill{background:var(--surface2);border:1px solid var(--border2);border-radius:4px;padding:5px 10px;font-size:11px;color:var(--text-muted);line-height:1.4;}
   .src-pill strong{color:var(--text);display:block;font-size:12px;}
-
-  /* ── FOOTER ── */
-  footer{
-    position:relative;z-index:1;
-    border-top:1px solid var(--border);
-    padding:16px 24px;
-    display:flex;align-items:center;justify-content:center;gap:16px;
-  }
+  footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;justify-content:center;gap:16px;}
   .ft-txt{font-family:var(--mono);font-size:10px;color:var(--text-dim);}
   .ft-txt a{color:var(--text-dim);text-decoration:none;}
   .ft-txt a:hover{color:var(--accent);}
-
-  @media(max-width:600px){
-    main{padding:32px 16px 80px;}
-    .section{padding:18px 16px;}
-    .feat-grid{grid-template-columns:1fr 1fr;}
-    .toc-wrap{padding:10px 16px;}
-  }
-  @media(max-width:400px){
-    .feat-grid{grid-template-columns:1fr;}
-  }
+  @media(max-width:600px){main{padding:32px 16px 80px;}.section{padding:18px 16px;}.feat-grid{grid-template-columns:1fr 1fr;}.toc-wrap{padding:10px 16px;}}
+  @media(max-width:400px){.feat-grid{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
@@ -269,38 +110,38 @@
 <main>
   <p class="page-title">User Manual</p>
   <h1 class="page-heading">BriefBoard 使い方マニュアル</h1>
-  <p class="page-meta">最終更新：2026年3月 &nbsp;·&nbsp; v1.0</p>
+  <p class="page-meta">最終更新：2026年3月 &nbsp;·&nbsp; v1.1</p>
 
   <!-- ══ 概要 ══ -->
   <section class="section" id="overview">
     <p class="section-title">01 &nbsp; 概要</p>
     <h2 class="section-h2"><span class="icon">📋</span>BriefBoard とは</h2>
-    <p class="prose">BriefBoard は、<strong>登録したキーワードごとに最新ニュースを自動取得・並べて表示するニュースダッシュボード</strong>です。サーバー不要・完全無料で、GitHub Pages 上で動作します。</p>
+    <p class="prose">BriefBoard は、<strong>登録したキーワードごとに最新ニュース・論文を自動取得・並べて表示するニュースダッシュボード</strong>です。サーバー不要・完全無料で、GitHub Pages 上で動作します。</p>
     <div class="feat-grid">
       <div class="feat-card">
         <span class="feat-icon">🔑</span>
         <div class="feat-name">キーワード列</div>
-        <div class="feat-desc">キーワードごとに列を作成。最大 10 個まで登録可能。</div>
+        <div class="feat-desc">キーワードごとに列を作成。最大 10 個まで登録可能。列ヘッダーの ✕ で削除。</div>
       </div>
       <div class="feat-card">
         <span class="feat-icon">📡</span>
         <div class="feat-name">複数ソース対応</div>
-        <div class="feat-desc">Google News、NHK、海外メディアなど 3 つまで同時選択。</div>
+        <div class="feat-desc">Google News、NHK、海外メディア、学術論文など 3 つまで同時選択。</div>
       </div>
       <div class="feat-card">
         <span class="feat-icon">✨</span>
         <div class="feat-name">キーワード強調</div>
-        <div class="feat-desc">記事タイトル内の関連語を色分け・太字でハイライト。</div>
+        <div class="feat-desc">記事タイトル内の関連語を色分け・太字でハイライト。翻訳後も維持。</div>
       </div>
       <div class="feat-card">
         <span class="feat-icon">🌐</span>
         <div class="feat-name">自動翻訳</div>
-        <div class="feat-desc">英語記事を日本語に、日本語を英語に切り替え可能。</div>
+        <div class="feat-desc">英語記事を日本語に、日本語を英語に切り替え可能。8件並列で全カードに適用。</div>
       </div>
       <div class="feat-card">
-        <span class="feat-icon">⚡</span>
-        <div class="feat-name">FLASH 表示</div>
-        <div class="feat-desc">公開 3 時間以内の記事に点滅アイコンで速報を通知。</div>
+        <span class="feat-icon">🏷️</span>
+        <div class="feat-name">ソース絵文字表示</div>
+        <div class="feat-desc">各カードに取得元を示す国旗・絵文字を表示。どのソースの記事か一目で判別。</div>
       </div>
       <div class="feat-card">
         <span class="feat-icon">🔗</span>
@@ -317,7 +158,7 @@
     <ul class="steps">
       <li>左サイドバーの <span class="ui">🔍 検索キーワード</span> パネルを開く。</li>
       <li>入力欄にキーワードを入力して <span class="ui">+ 追加</span> ボタンを押す（または <span class="ui">Enter</span>）。カンマ区切りで複数まとめて追加可能。</li>
-      <li>追加されたキーワードはタグとして表示される。<strong>✕ をクリックで削除</strong>。</li>
+      <li>追加されたキーワードはタグとして表示される。サイドバーのタグの <strong>✕ をクリックで削除</strong>。または各列ヘッダー右端の <strong>✕ ボタン</strong>からも削除可能。</li>
       <li>キーワードは <strong>最大 10 個</strong>まで登録できる。</li>
     </ul>
     <div class="note">
@@ -337,40 +178,49 @@
     <p class="prose">サイドバーの <span class="ui">⚙ ソース設定</span> パネルからソースを選択します。<strong>最大 3 つ</strong>まで同時選択可能。選択後 <span class="ui">✓ 適用して更新</span> を押すと反映されます。</p>
 
     <div class="src-group">
-      <p class="src-group-label">🔍 Google News</p>
+      <p class="src-group-label">🇯🇵 / 🌐 &nbsp; Google News</p>
       <div class="src-pills">
-        <div class="src-pill"><strong>Google News 日本語</strong>国内・日本語記事を網羅</div>
-        <div class="src-pill"><strong>Google News 英語</strong>海外速報・英語記事中心</div>
+        <div class="src-pill"><strong>🇯🇵 Google News 日本語</strong>国内・日本語記事を網羅</div>
+        <div class="src-pill"><strong>🌐 Google News 英語</strong>海外速報・英語記事中心</div>
       </div>
     </div>
     <div class="src-group">
-      <p class="src-group-label">🇯🇵 日本語メディア</p>
+      <p class="src-group-label">🎓 &nbsp; 学術・研究</p>
       <div class="src-pills">
-        <div class="src-pill"><strong>NHK</strong>公共放送ニュース</div>
-        <div class="src-pill"><strong>東洋経済</strong>ビジネス・経済</div>
-        <div class="src-pill"><strong>ITmedia</strong>IT・テクノロジー</div>
-        <div class="src-pill"><strong>ベストカー</strong>自動車専門誌</div>
-        <div class="src-pill"><strong>ASCII</strong>テック・デジタル</div>
+        <div class="src-pill"><strong>🎓 Semantic Scholar</strong>直近3か月の学術論文。新しい順に取得。日本語キーワードは英語に自動変換。</div>
       </div>
     </div>
     <div class="src-group">
-      <p class="src-group-label">⚡ EV・電池（英語）</p>
+      <p class="src-group-label">🇯🇵 &nbsp; 日本語メディア</p>
       <div class="src-pills">
-        <div class="src-pill"><strong>Electrek</strong>EV・再生可能エネルギー</div>
-        <div class="src-pill"><strong>InsideEVs</strong>EV専門メディア</div>
-        <div class="src-pill"><strong>CleanTechnica</strong>クリーンテック</div>
-        <div class="src-pill"><strong>Car and Driver</strong>自動車総合誌</div>
-        <div class="src-pill"><strong>WIRED</strong>テック・未来トレンド</div>
+        <div class="src-pill"><strong>🇯🇵 NHK</strong>公共放送ニュース</div>
+        <div class="src-pill"><strong>🇯🇵 東洋経済</strong>ビジネス・経済</div>
+        <div class="src-pill"><strong>🇯🇵 ITmedia</strong>IT・テクノロジー</div>
+        <div class="src-pill"><strong>🇯🇵 ベストカー</strong>自動車専門誌</div>
+        <div class="src-pill"><strong>🇯🇵 ASCII</strong>テック・デジタル</div>
       </div>
     </div>
     <div class="src-group">
-      <p class="src-group-label">🌐 総合ビジネス（英語）</p>
+      <p class="src-group-label">⚡ / 🌿 / 🚗 / 🔬 &nbsp; EV・電池（英語）</p>
       <div class="src-pills">
-        <div class="src-pill"><strong>BBC</strong>国際ニュース</div>
-        <div class="src-pill"><strong>Financial Times</strong>金融・経済</div>
-        <div class="src-pill"><strong>TechCrunch</strong>スタートアップ・テック</div>
-        <div class="src-pill"><strong>The Verge</strong>テクノロジー</div>
+        <div class="src-pill"><strong>⚡ Electrek</strong>EV・再生可能エネルギー</div>
+        <div class="src-pill"><strong>⚡ InsideEVs</strong>EV専門メディア</div>
+        <div class="src-pill"><strong>🌿 CleanTechnica</strong>クリーンテック</div>
+        <div class="src-pill"><strong>🚗 Car and Driver</strong>自動車総合誌</div>
+        <div class="src-pill"><strong>🔬 WIRED</strong>テック・未来トレンド</div>
       </div>
+    </div>
+    <div class="src-group">
+      <p class="src-group-label">🇬🇧 / 🇺🇸 &nbsp; 総合ビジネス（英語）</p>
+      <div class="src-pills">
+        <div class="src-pill"><strong>🇬🇧 BBC</strong>国際ニュース</div>
+        <div class="src-pill"><strong>🇬🇧 Financial Times</strong>金融・経済</div>
+        <div class="src-pill"><strong>🇺🇸 TechCrunch</strong>スタートアップ・テック</div>
+        <div class="src-pill"><strong>🇺🇸 The Verge</strong>テクノロジー</div>
+      </div>
+    </div>
+    <div class="note">
+      <strong>Semantic Scholar について：</strong>直近3か月・新しい順で最大50件取得。日本語キーワード（「全固体電池」等）はエイリアスで英語に自動変換してから検索します。複数キーワードを順番に処理するため、取得完了まで少し時間がかかる場合があります。
     </div>
   </section>
 
@@ -380,8 +230,8 @@
     <h2 class="section-h2"><span class="icon">📰</span>記事カードの見方</h2>
     <table class="shortcut-table">
       <tr>
-        <td><span class="badge-flash">⚡</span> FLASH アイコン</td>
-        <td>公開から <strong>3 時間以内</strong>の速報記事。点滅アニメーション付き。</td>
+        <td>絵文字（🇯🇵 🌐 🎓 ⚡ など）</td>
+        <td>カード左上に表示される取得元ソースのアイコン。ソースの種類を一目で識別できる。</td>
       </tr>
       <tr>
         <td><span class="badge-new">NEW</span> バッジ</td>
@@ -398,6 +248,10 @@
       <tr>
         <td>カードをクリック</td>
         <td>新しいタブで元記事を開く。同時に既読としてマークされる。</td>
+      </tr>
+      <tr>
+        <td>列ヘッダーの <span class="ui">✕</span></td>
+        <td>そのキーワードと列（カード含む）をまるごと削除。サイドバーのタグも連動して消える。</td>
       </tr>
     </table>
     <div class="note">
@@ -433,7 +287,7 @@
   <section class="section" id="aliases">
     <p class="section-title">06 &nbsp; エイリアス（表記ゆれ対応）</p>
     <h2 class="section-h2"><span class="icon">🔄</span>自動的に認識される表記バリアント</h2>
-    <p class="prose">あらかじめ登録されたエイリアスにより、<strong>1 つのキーワードで複数の表記を同時に検索・ハイライト</strong>できます。</p>
+    <p class="prose">あらかじめ登録されたエイリアスにより、<strong>1 つのキーワードで複数の表記を同時に検索・ハイライト</strong>できます。Semantic Scholar 検索時は日本語キーワードを英語に自動変換します。</p>
     <table class="alias-table">
       <tr>
         <th>入力キーワード</th>
@@ -480,9 +334,14 @@
         <td>solid-state battery / solid state / all-solid-state</td>
         <td>英語技術用語に対応</td>
       </tr>
+      <tr>
+        <td>トランプ</td>
+        <td>trump / donald trump / ドナルド・トランプ</td>
+        <td>人名の英日対応</td>
+      </tr>
     </table>
     <div class="note">
-      <strong>中点・スペース吸収：</strong>「イーロン・マスク」と入力すると「イーロンマスク」「イーロン マスク」にも自動マッチします。
+      <strong>中点・スペース吸収：</strong>「イーロン・マスク」と入力すると「イーロンマスク」「イーロン マスク」にも自動マッチします。英語キーワード（lithium、gallium等）はそのまま Semantic Scholar に送信されます。
     </div>
   </section>
 
@@ -493,7 +352,7 @@
     <table class="shortcut-table">
       <tr>
         <td>💻 PC</td>
-        <td>列ヘッダー（<span class="ui">⠿</span> マーク）を<strong>掴んでドラッグ</strong>。ドラッグ中は全列がコンパクトに縮小し、全体が一覧できる。</td>
+        <td>列ヘッダーをどこでも<strong>掴んでドラッグ</strong>。ドラッグ中は全列がコンパクトに縮小し、全体が一覧できる。離すと元の幅に戻る。</td>
       </tr>
       <tr>
         <td>📱 スマホ</td>
@@ -525,7 +384,7 @@
       </tr>
     </table>
     <div class="note">
-      Google 翻訳 API を使用しています。翻訳中は記事タイトルが薄くなり、完了後に表示されます。<strong>キーワードのハイライトは翻訳後のテキストにも維持</strong>されます。
+      Google 翻訳 API を使用しています。<strong>8件並列で順次処理</strong>するため、カードが多い場合は少し時間がかかります。翻訳中は記事タイトルが薄くなり、完了後に表示されます。<strong>キーワードのハイライトは翻訳後のテキストにも維持</strong>されます。翻訳結果はキャッシュされるため、同じ言語に再度切り替えると即座に反映されます。
     </div>
   </section>
 
@@ -546,9 +405,11 @@
   <!-- ══ 共有・その他 ══ -->
   <section class="section" id="share">
     <p class="section-title">10 &nbsp; 共有・その他の機能</p>
-    <h2 class="section-h2"><span class="icon">🔗</span>URL 共有</h2>
-    <p class="prose"><span class="ui">🔗 このキーワードのURLをコピー</span> ボタンを押すと、現在のキーワード設定が URL パラメータとして含まれたリンクがクリップボードにコピーされます。</p>
-    <p class="prose">受け取った人がそのURLを開くと、<strong>同じキーワードで自動的に初期化</strong>されます。社内での情報共有に活用できます。</p>
+    <h2 class="section-h2"><span class="icon">↻</span>更新ボタン</h2>
+    <p class="prose">ヘッダー右の <span class="ui">↻ 更新</span> ボタンを押すと、ニュースキャッシュと翻訳キャッシュを両方クリアして全列を再取得します。取得完了までボタンは「↻ 取得中…」と表示されて無効化されます。</p>
+
+    <h2 class="section-h2" style="margin-top:24px;"><span class="icon">🔗</span>URL 共有</h2>
+    <p class="prose"><span class="ui">🔗 このキーワードのURLをコピー</span> ボタンを押すと、現在のキーワード設定が URL パラメータとして含まれたリンクがクリップボードにコピーされます。受け取った人がそのURLを開くと、<strong>同じキーワードで自動的に初期化</strong>されます。</p>
 
     <h2 class="section-h2" style="margin-top:24px;"><span class="icon">📲</span>ホーム画面に追加（スマホ）</h2>
     <p class="prose">スマホでは <span class="ui">📲 ホーム画面に追加</span> ボタンが表示されます。タップすると操作ガイドが表示され、アプリとしてインストールできます。</p>
@@ -561,6 +422,7 @@
       <tr><td>③ corsproxy.io</td><td>フォールバック2。</td></tr>
       <tr><td>④ rss2json.com</td><td>最終手段（150リクエスト/日/IP）。</td></tr>
     </table>
+    <p class="prose" style="margin-top:14px;">Semantic Scholar はCORSフリーな公開APIのため、プロキシ不要で直接アクセスします。</p>
     <div class="note">
       <strong>データはブラウザ内にのみ保存されます。</strong>キーワード・既読情報・ソース設定はすべて localStorage（ブラウザのローカルストレージ）に記録され、外部サーバーには送信されません。
     </div>

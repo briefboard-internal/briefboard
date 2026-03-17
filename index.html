@@ -1019,6 +1019,55 @@ let activeSrcs  = JSON.parse(localStorage.getItem('bb_src') || JSON.stringify(['
 let cachedItems = [];
 let errorCount  = 0;
 const gnewsCache = {};
+// Scholar シリアルキュー（レート制限対策：1件ずつ順番に実行）
+const _scholarQueue = [];
+let   _scholarBusy  = false;
+async function _scholarDrain() {
+  if (_scholarBusy || !_scholarQueue.length) return;
+  _scholarBusy = true;
+  const {query, resolve} = _scholarQueue.shift();
+  const result = await _scholarFetch(query);
+  resolve(result);
+  // 次のリクエストまで少し待つ（レート制限の余裕）
+  await new Promise(r => setTimeout(r, 500));
+  _scholarBusy = false;
+  _scholarDrain();
+}
+async function _scholarFetch(query) {
+  const scholarCacheKey = 'scholar|' + query.toLowerCase();
+  if (gnewsCache[scholarCacheKey]) return gnewsCache[scholarCacheKey];
+  const apiUrl = `https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(query)}&limit=15&fields=title,authors,year,externalIds,openAccessPdf,publicationDate`;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try {
+      if (attempt > 0) await new Promise(r => setTimeout(r, 1000 * attempt));
+      const res = await fetch(apiUrl, {signal: AbortSignal.timeout(15000)});
+      if (res.status === 429) continue;
+      if (!res.ok) break;
+      const data = await res.json();
+      if (!data?.data?.length) break;
+      const items = data.data.map(p => {
+        const doi   = p.externalIds?.DOI;
+        const arxiv = p.externalIds?.ArXiv;
+        const link  = p.openAccessPdf?.url
+          || (arxiv ? `https://arxiv.org/abs/${arxiv}` : null)
+          || (doi   ? `https://doi.org/${doi}` : null)
+          || `https://www.semanticscholar.org/paper/${p.paperId}`;
+        const author = p.authors?.[0]?.name || '';
+        const year   = p.year || '';
+        return {
+          title:   p.title || '',
+          link,
+          source:  author ? `${author}${year ? ' ('+year+')' : ''}` : 'Semantic Scholar',
+          pubDate: p.publicationDate || '',
+          flag:    '🎓',
+        };
+      });
+      gnewsCache[scholarCacheKey] = items;
+      return items;
+    } catch(e) {}
+  }
+  return gnewsCache[scholarCacheKey] || [];
+}
 // New表示用：前回ロード時に見たURLセット
 const prevSeenUrls = new Set(JSON.parse(localStorage.getItem('bb_prev_urls') || '[]'));
 // 今回ロードしたURLを収集（セッション終了時に保存）
@@ -1331,32 +1380,11 @@ async function fetchFromSource(src, query) {
   }
 
   if (src.type === 'scholar') {
-    // Semantic Scholar API（CORSフリー・安定）
-    try {
-      const apiUrl = `https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(query)}&limit=15&fields=title,authors,year,externalIds,openAccessPdf,publicationDate`;
-      const res = await fetch(apiUrl, {signal: AbortSignal.timeout(12000)});
-      const data = await res.json();
-      if (data?.data?.length) {
-        return data.data.map(p => {
-          const doi = p.externalIds?.DOI;
-          const arxiv = p.externalIds?.ArXiv;
-          const link = p.openAccessPdf?.url
-            || (arxiv ? `https://arxiv.org/abs/${arxiv}` : null)
-            || (doi   ? `https://doi.org/${doi}` : null)
-            || `https://www.semanticscholar.org/paper/${p.paperId}`;
-          const author = p.authors?.[0]?.name || '';
-          const year   = p.year || '';
-          return {
-            title: p.title || '',
-            link,
-            source: author ? `${author}${year ? ' ('+year+')' : ''}` : 'Semantic Scholar',
-            pubDate: p.publicationDate || '',
-            flag: '🎓',
-          };
-        });
-      }
-    } catch(e) {}
-    return [];
+    // Semantic Scholar API — シリアルキューでレート制限を回避
+    return new Promise(resolve => {
+      _scholarQueue.push({query, resolve});
+      _scholarDrain();
+    });
   }
 
   if (src.type === 'rss') {

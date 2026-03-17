@@ -32,7 +32,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 /* ── HEADER ── */
 header{border-bottom:1px solid var(--border);padding:12px 0;position:sticky;top:0;background:rgba(12,12,15,0.96);backdrop-filter:blur(16px);z-index:200;}
 .hdr{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 16px;}
-.logo{display:flex;align-items:baseline;gap:8px;flex-shrink:0;}
+.logo{display:flex;align-items:baseline;gap:8px;flex-shrink:0;text-decoration:none;cursor:pointer;}
 .logo-mark{font-family:var(--mono);font-size:17px;font-weight:500;color:var(--accent);letter-spacing:-1px;}
 .logo-sub{font-family:var(--mono);font-size:9px;color:var(--text-muted);letter-spacing:1px;}
 @media(max-width:480px){.logo-sub{display:none;}}
@@ -613,12 +613,13 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
 <button class="scroll-top-btn" id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="トップへ戻る">↑</button>
 <header>
   <div class="hdr">
-    <div class="logo">
+    <a class="logo" href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;" style="text-decoration:none;">
       <span class="logo-mark">BriefBoard</span>
       <span class="logo-sub">Your pick, your news.</span>
-    </div>
+    </a>
     <div class="hdr-right">
       <div id="ftTxt" style="font-family:var(--mono);font-size:10px;color:var(--text-dim);white-space:nowrap;"></div>
+      <button class="btn-refresh" id="btnRefresh" onclick="doRefresh(this)" title="ニュースを再取得">↻ 更新</button>
       <div class="lang-toggle">
         <button class="lang-btn on" id="langOrig" onclick="setLang('orig')">原文</button>
         <button class="lang-btn" id="langJa" onclick="setLang('ja')">日本語</button>
@@ -1114,6 +1115,18 @@ async function loadAll() {
   renderColumns();
 }
 
+async function doRefresh(btn) {
+  if (btn) { btn.disabled = true; btn.textContent = '↻ 取得中…'; }
+  Object.keys(gnewsCache).forEach(k => delete gnewsCache[k]);
+  Object.keys(translateCache).forEach(k => delete translateCache[k]);
+  renderColumns();
+  // 全列の取得完了を待って再有効化
+  const allFetches = keywords.map((kw, i) => fetchByKeyword(kw, i));
+  Promise.allSettled(allFetches).then(() => {
+    if (btn) { btn.disabled = false; btn.textContent = '↻ 更新'; }
+  });
+}
+
 // ══════════════════════════════════════════════
 //  RENDER
 // ══════════════════════════════════════════════
@@ -1318,27 +1331,31 @@ async function fetchFromSource(src, query) {
   }
 
   if (src.type === 'scholar') {
-    // Google Scholar RSS
-    const scholarUrl = `https://scholar.google.com/scholar_alerts?update_op=create_alert&email_for_feed=&q=${encodeURIComponent(query)}&hl=ja&as_sdt=0%2C5`;
-    const rssUrl = `https://scholar.google.com/scholar?q=${encodeURIComponent(query)}&hl=ja&as_sdt=0%2C5&as_rr=1&output=rss`;
-    const proxies = [
-      async () => {
-        const xml = await fetchViaWorker(rssUrl);
-        return xml.map(i => ({...i, source: i.source||'Google Scholar', flag:'🎓'}));
-      },
-      async () => {
-        const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`, {signal: AbortSignal.timeout(10000)});
-        const d = await r.json();
-        return parseRSSXML(d.contents || '').map(i => ({...i, source: i.source||'Google Scholar', flag:'🎓'}));
-      },
-      async () => {
-        const r = await fetch(`https://corsproxy.io/?${encodeURIComponent(rssUrl)}`, {signal: AbortSignal.timeout(10000)});
-        return parseRSSXML(await r.text()).map(i => ({...i, source: i.source||'Google Scholar', flag:'🎓'}));
-      },
-    ];
-    for (const fn of proxies) {
-      try { const r = await fn(); if (r?.length) return r; } catch(e) { continue; }
-    }
+    // Semantic Scholar API（CORSフリー・安定）
+    try {
+      const apiUrl = `https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(query)}&limit=15&fields=title,authors,year,externalIds,openAccessPdf,publicationDate`;
+      const res = await fetch(apiUrl, {signal: AbortSignal.timeout(12000)});
+      const data = await res.json();
+      if (data?.data?.length) {
+        return data.data.map(p => {
+          const doi = p.externalIds?.DOI;
+          const arxiv = p.externalIds?.ArXiv;
+          const link = p.openAccessPdf?.url
+            || (arxiv ? `https://arxiv.org/abs/${arxiv}` : null)
+            || (doi   ? `https://doi.org/${doi}` : null)
+            || `https://www.semanticscholar.org/paper/${p.paperId}`;
+          const author = p.authors?.[0]?.name || '';
+          const year   = p.year || '';
+          return {
+            title: p.title || '',
+            link,
+            source: author ? `${author}${year ? ' ('+year+')' : ''}` : 'Semantic Scholar',
+            pubDate: p.publicationDate || '',
+            flag: '🎓',
+          };
+        });
+      }
+    } catch(e) {}
     return [];
   }
 
@@ -1544,50 +1561,111 @@ function renderArticleCards(body, articles, idx, kw) {
 // ══════════════════════════════════════════════
 // translateCache は STATE セクションで宣言済み
 
+// ── 翻訳システム（バッチ処理で高速化） ──
+// 1リクエストに最大20タイトルをまとめて送信
+const _TL_BATCH   = 20;   // 1バッチのタイトル数
+const _TL_SEP     = '\n▲\n'; // タイトル結合セパレータ（翻訳結果にも残る）
+const _TL_CONCURRENCY = 4; // 同時バッチ数
+let   _tlRunning  = 0;
+const _tlQueue    = []; // [{link, title, lang, el}]
+
+function _tlFlush(lang) {
+  // キューを _TL_BATCH 件ずつバッチに分けて処理
+  while (_tlRunning < _TL_CONCURRENCY && _tlQueue.length > 0) {
+    const batch = _tlQueue.splice(0, _TL_BATCH);
+    _tlRunning++;
+    _tlExecBatch(batch, lang).finally(() => {
+      _tlRunning--;
+      _tlFlush(currentLang);
+    });
+  }
+}
+
+async function _tlExecBatch(batch, lang) {
+  // キャッシュ済みを先に反映、未翻訳だけAPI送信
+  const uncached = [];
+  batch.forEach(job => {
+    const cached = translateCache[job.link + '|' + lang];
+    if (cached) {
+      if (currentLang === lang) {
+        const ownKw = job.el.closest?.('.col')?.querySelector('.col-kw')?.textContent || '';
+        job.el.innerHTML = boldKeywords(cached, ownKw);
+      }
+    } else {
+      job.el.style.opacity = '0.5';
+      uncached.push(job);
+    }
+  });
+  if (!uncached.length) return;
+
+  // 複数タイトルを1リクエストにまとめる
+  const joined  = uncached.map(j => j.title).join(_TL_SEP);
+  const tl      = lang === 'ja' ? 'ja' : 'en';
+  const url     = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${tl}&dt=t&q=${encodeURIComponent(joined)}`;
+
+  let retries = 0;
+  while (retries <= 2) {
+    try {
+      const res  = await fetch(url, {signal: AbortSignal.timeout(12000)});
+      if (!res.ok) throw new Error('http ' + res.status);
+      const data = await res.json();
+      // レスポンスの全セグメントを結合して分割
+      const rawTranslated = data?.[0]?.map(s => s?.[0] || '').join('') || joined;
+      // セパレータで分割（翻訳後にセパレータが変化する場合に備え複数パターン）
+      const parts = rawTranslated.split(/\n?▲\n?|\n?▲\n?/);
+      uncached.forEach((job, i) => {
+        const translated = (parts[i] || job.title).trim();
+        translateCache[job.link + '|' + lang] = translated;
+        if (currentLang === lang) {
+          const ownKw = job.el.closest?.('.col')?.querySelector('.col-kw')?.textContent || '';
+          job.el.innerHTML = boldKeywords(translated, ownKw);
+        }
+        job.el.style.opacity = '';
+      });
+      return;
+    } catch(e) {
+      retries++;
+      if (retries <= 2) await new Promise(r => setTimeout(r, 500 * retries));
+    }
+  }
+  // 全リトライ失敗 → 原文のまま
+  uncached.forEach(job => { job.el.style.opacity = ''; });
+}
+
 function setLang(lang) {
   currentLang = lang;
   localStorage.setItem('bb_lang', lang);
   document.getElementById('langOrig').classList.toggle('on', lang === 'orig');
   document.getElementById('langJa').classList.toggle('on',   lang === 'ja');
   document.getElementById('langEn').classList.toggle('on',   lang === 'en');
-  // 全カードのタイトルを更新
+  _tlQueue.length = 0; // 前のキューをキャンセル
   document.querySelectorAll('.n-card[data-link]').forEach(card => {
-    const link = card.getAttribute('data-link');
+    const link      = card.getAttribute('data-link');
     const origTitle = card.getAttribute('data-orig');
-    const titleEl = card.querySelector('.n-title');
+    const titleEl   = card.querySelector('.n-title');
     if (!titleEl) return;
+    const ownKw = card.closest('.col')?.querySelector('.col-kw')?.textContent || '';
     if (lang === 'orig') {
-      titleEl.textContent = origTitle;
+      titleEl.innerHTML = boldKeywords(origTitle, ownKw);
     } else if (translateCache[link + '|' + lang]) {
-      titleEl.textContent = translateCache[link + '|' + lang];
+      titleEl.innerHTML = boldKeywords(translateCache[link + '|' + lang], ownKw);
     } else {
-      titleEl.setAttribute('data-pending', lang);
-      translateTitle(link, origTitle, lang, titleEl);
+      _tlQueue.push({link, title: origTitle, lang, el: titleEl});
     }
   });
+  if (_tlQueue.length) _tlFlush(lang);
 }
 
-async function translateTitle(link, title, lang, el) {
-  const cacheKey = link + '|' + lang;
-  if (translateCache[cacheKey]) { el.textContent = translateCache[cacheKey]; return; }
-  el.style.opacity = '0.5';
-  try {
-    const tl = lang === 'ja' ? 'ja' : 'en';
-    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${tl}&dt=t&q=${encodeURIComponent(title)}`;
-    const res = await fetch(url, {signal: AbortSignal.timeout(8000)});
-    const data = await res.json();
-    const translated = data?.[0]?.map(seg => seg?.[0] || '').join('') || title;
-    translateCache[cacheKey] = translated;
-    // まだ同じ言語モードなら反映（boldKeywordsを再適用してHTMLを維持）
-    if (currentLang === lang) {
-      const ownKw = el.closest('.col') ? el.closest('.col').querySelector('.col-kw')?.textContent || '' : '';
-      el.innerHTML = boldKeywords(translated, ownKw);
-    }
-  } catch(e) {
-    // 翻訳失敗時は原文を維持
-  } finally {
-    el.style.opacity = '';
+// 単発翻訳（カード初期描画時）
+function translateTitle(link, title, lang, el) {
+  const cached = translateCache[link + '|' + lang];
+  if (cached) {
+    const ownKw = el.closest?.('.col')?.querySelector('.col-kw')?.textContent || '';
+    el.innerHTML = boldKeywords(cached, ownKw);
+    return;
   }
+  _tlQueue.push({link, title, lang, el});
+  _tlFlush(lang);
 }
 
 // ══════════════════════════════════════════════

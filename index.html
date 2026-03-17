@@ -1651,106 +1651,57 @@ function renderArticleCards(body, articles, idx, kw) {
 // ══════════════════════════════════════════════
 // translateCache は STATE セクションで宣言済み
 
-// ── 翻訳システム（バッチ＋フォールバック） ──
-const _TL_BATCH       = 15;  // 1バッチ件数
-const _TL_CONCURRENCY = 4;   // 同時バッチ数
+// ── 翻訳システム（個別リクエスト・同時8件・リトライあり） ──
+const _TL_CONCURRENCY = 8;
 let   _tlRunning      = 0;
 const _tlQueue        = [];
 
 function _tlFlush(lang) {
   while (_tlRunning < _TL_CONCURRENCY && _tlQueue.length > 0) {
-    const batch = _tlQueue.splice(0, _TL_BATCH);
+    const job = _tlQueue.shift();
     _tlRunning++;
-    _tlExecBatch(batch, lang).finally(() => {
+    _tlExecOne(job).finally(() => {
       _tlRunning--;
       _tlFlush(currentLang);
     });
   }
 }
 
-async function _tlFetchOne(title, lang) {
+async function _tlExecOne(job) {
+  const {link, title, lang, el} = job;
+  const key = link + '|' + lang;
+
+  // キャッシュ済みならすぐ反映
+  if (translateCache[key]) {
+    if (currentLang === lang) {
+      const ownKw = el.closest?.('.col')?.querySelector('.col-kw')?.textContent || '';
+      el.innerHTML = boldKeywords(translateCache[key], ownKw);
+    }
+    return;
+  }
+
+  el.style.opacity = '0.5';
   const tl  = lang === 'ja' ? 'ja' : 'en';
   const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${tl}&dt=t&q=${encodeURIComponent(title)}`;
-  const res = await fetch(url, {signal: AbortSignal.timeout(10000)});
-  if (!res.ok) throw new Error('http ' + res.status);
-  const data = await res.json();
-  return data?.[0]?.map(s => s?.[0] || '').join('') || title;
-}
 
-async function _tlExecBatch(batch, lang) {
-  const tl = lang === 'ja' ? 'ja' : 'en';
-
-  // キャッシュ済みを先に反映
-  const uncached = [];
-  batch.forEach(job => {
-    const key = job.link + '|' + lang;
-    if (translateCache[key]) {
-      if (currentLang === lang) {
-        const ownKw = job.el.closest?.('.col')?.querySelector('.col-kw')?.textContent || '';
-        job.el.innerHTML = boldKeywords(translateCache[key], ownKw);
-      }
-    } else {
-      job.el.style.opacity = '0.5';
-      uncached.push(job);
-    }
-  });
-  if (!uncached.length) return;
-
-  // 番号タグで結合（[0]〜[N]は翻訳APIで保存される）
-  const tagged  = uncached.map((j, i) => `[${i}]${j.title}`).join('\n');
-  const url     = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${tl}&dt=t&q=${encodeURIComponent(tagged)}`;
-
-  let batchOk = false;
-  for (let retry = 0; retry <= 2; retry++) {
+  for (let retry = 0; retry < 3; retry++) {
     try {
-      const res = await fetch(url, {signal: AbortSignal.timeout(12000)});
-      if (!res.ok) throw new Error('http ' + res.status);
-      const data  = await res.json();
-      const raw   = data?.[0]?.map(s => s?.[0] || '').join('') || '';
-      // [0]...[N] タグで分割して対応するカードに反映
-      const map = {};
-      const re  = /\[(\d+)\]([^\[]*)/g;
-      let m;
-      while ((m = re.exec(raw)) !== null) {
-        const idx = parseInt(m[1]);
-        const txt = m[2].trim();
-        if (!isNaN(idx) && txt) map[idx] = txt;
+      if (retry > 0) await new Promise(r => setTimeout(r, 500 * retry));
+      const res  = await fetch(url, {signal: AbortSignal.timeout(10000)});
+      if (res.status === 429) continue; // レート超過→リトライ
+      if (!res.ok) break;
+      const data = await res.json();
+      const translated = data?.[0]?.map(s => s?.[0] || '').join('') || title;
+      translateCache[key] = translated;
+      if (currentLang === lang) {
+        const ownKw = el.closest?.('.col')?.querySelector('.col-kw')?.textContent || '';
+        el.innerHTML = boldKeywords(translated, ownKw);
       }
-      // 全件マッチしたかチェック
-      if (Object.keys(map).length === uncached.length) {
-        uncached.forEach((job, i) => {
-          const translated = map[i] || job.title;
-          translateCache[job.link + '|' + lang] = translated;
-          if (currentLang === lang) {
-            const ownKw = job.el.closest?.('.col')?.querySelector('.col-kw')?.textContent || '';
-            job.el.innerHTML = boldKeywords(translated, ownKw);
-          }
-          job.el.style.opacity = '';
-        });
-        batchOk = true;
-        break;
-      }
-      // 件数が合わない → フォールバックへ
-      break;
-    } catch(e) {
-      if (retry < 2) await new Promise(r => setTimeout(r, 600 * (retry + 1)));
-    }
+      el.style.opacity = '';
+      return;
+    } catch(e) { /* リトライ */ }
   }
-
-  if (!batchOk) {
-    // バッチ失敗 → 1件ずつ翻訳（確実性優先）
-    await Promise.allSettled(uncached.map(async job => {
-      try {
-        const translated = await _tlFetchOne(job.title, lang);
-        translateCache[job.link + '|' + lang] = translated;
-        if (currentLang === lang) {
-          const ownKw = job.el.closest?.('.col')?.querySelector('.col-kw')?.textContent || '';
-          job.el.innerHTML = boldKeywords(translated, ownKw);
-        }
-      } catch(e) { /* 原文のまま */ }
-      job.el.style.opacity = '';
-    }));
-  }
+  el.style.opacity = ''; // 失敗時は原文のまま
 }
 
 function setLang(lang) {
@@ -1759,7 +1710,7 @@ function setLang(lang) {
   document.getElementById('langOrig').classList.toggle('on', lang === 'orig');
   document.getElementById('langJa').classList.toggle('on',   lang === 'ja');
   document.getElementById('langEn').classList.toggle('on',   lang === 'en');
-  _tlQueue.length = 0;
+  _tlQueue.length = 0; // 前のキューをキャンセル
   document.querySelectorAll('.n-card').forEach(card => {
     const link      = card.getAttribute('data-link') || '';
     const origTitle = card.getAttribute('data-orig')  || '';

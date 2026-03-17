@@ -200,7 +200,8 @@ header{border-bottom:1px solid var(--border);padding:12px 0;position:sticky;top:
 .n-src{font-family:var(--mono);font-size:9px;color:var(--accent2);letter-spacing:0.8px;text-transform:uppercase;}
 .n-dot{width:2px;height:2px;border-radius:50%;background:var(--text-dim);flex-shrink:0;}
 .n-time{font-family:var(--mono);font-size:9px;color:var(--text-muted);}
-.n-flag{display:none;}
+.n-flag{font-size:11px;flex-shrink:0;line-height:1;}
+.n-srclabel{font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:0.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px;}
 .n-title{font-family:var(--serif);font-size:14px;line-height:1.6;color:var(--text);transition:color 0.12s;}
 .n-card:hover .n-title,.n-card:active .n-title{color:var(--accent);}
 
@@ -422,12 +423,6 @@ footer{border-top:1px solid var(--border);padding:12px 16px;position:relative;z-
   line-height:1.5;
 }
 
-/* ── FLASH（3時間以内）アイコン ── */
-.n-flash{
-  display:inline-block;font-size:11px;margin-left:4px;
-  vertical-align:middle;flex-shrink:0;
-  animation:flashPulse 1.4s ease-in-out infinite;
-}
 @keyframes flashPulse{
   0%,100%{opacity:1;transform:scale(1);}
   50%{opacity:0.4;transform:scale(0.85);}
@@ -874,8 +869,8 @@ const SOURCE_GROUPS = [
   {
     label: '🔍 Google News',
     sources: [
-      { id:'gnews_ja', name:'Google News 日本語', desc:'日本語の最新ニュース', type:'gnews', lang:'ja', gl:'JP', ceid:'JP:ja' },
-      { id:'gnews_en', name:'Google News 英語',   desc:'英語の最新ニュース',   type:'gnews', lang:'en', gl:'US', ceid:'US:en' },
+      { id:'gnews_ja', name:'Google News 日本語', desc:'日本語の最新ニュース', type:'gnews', lang:'ja', gl:'JP', ceid:'JP:ja', flag:'🇯🇵' },
+      { id:'gnews_en', name:'Google News 英語',   desc:'英語の最新ニュース',   type:'gnews', lang:'en', gl:'US', ceid:'US:en', flag:'🌐' },
     ]
   },
   {
@@ -948,7 +943,7 @@ async function fetchRSS(src) {
     try {
       const items = await strategy();
       if (items && items.length > 0) {
-        return items.map(i => ({...i, source: src.name, flag: src.flag}));
+        return items.map(i => ({...i, source: i.source||src.name, flag: src.flag||'📰', srcLabel: src.name}));
       }
     } catch(e) { /* try next */ }
   }
@@ -1403,16 +1398,16 @@ async function fetchFromSource(src, query) {
     const proxies = [
       async () => {
         const xml = await fetchViaWorker(rssUrl);
-        return xml.map(i => ({...i, source: i.source||srcName, flag:'📰'}));
+        return xml.map(i => ({...i, source: i.source||srcName, flag: src.flag||'📰', srcLabel: srcName}));
       },
       async () => {
         const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`, {signal: AbortSignal.timeout(10000)});
         const d = await r.json();
-        return parseRSSXML(d.contents || '').map(i => ({...i, source: i.source||srcName, flag:'📰'}));
+        return parseRSSXML(d.contents || '').map(i => ({...i, source: i.source||srcName, flag: src.flag||'📰', srcLabel: srcName}));
       },
       async () => {
         const r = await fetch(`https://corsproxy.io/?${encodeURIComponent(rssUrl)}`, {signal: AbortSignal.timeout(10000)});
-        return parseRSSXML(await r.text()).map(i => ({...i, source: i.source||srcName, flag:'📰'}));
+        return parseRSSXML(await r.text()).map(i => ({...i, source: i.source||srcName, flag: src.flag||'📰', srcLabel: srcName}));
       },
       async () => {
         const r = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}&count=100`, {signal: AbortSignal.timeout(10000)});
@@ -1453,7 +1448,7 @@ async function fetchFromSource(src, query) {
       return items.filter(item => {
         const text = (item.title + ' ' + (item.description||'')).toLowerCase();
         return kws.some(k => k && text.includes(k.toLowerCase()));
-      }).map(i => ({...i, source: i.source||src.name, flag: src.flag||'📰'}));
+      }).map(i => ({...i, source: i.source||src.name, flag: src.flag||'📰', srcLabel: src.name}));
     } catch(e) { return []; }
   }
   return [];
@@ -1593,9 +1588,6 @@ function renderArticleCards(body, articles, idx, kw) {
 
     const isNew = a.link && !prevSeenUrls.has(a.link) && prevSeenUrls.size > 0;
 
-    // ── FLASH：3時間以内の記事 ──
-    const pubMs = a.pubDate ? new Date(a.pubDate).getTime() : 0;
-    const isFlash = pubMs > 0 && (Date.now() - pubMs) < 3 * 60 * 60 * 1000;
 
     // ── 共起：設定キーワードが2つ以上タイトルに含まれる ──
     const titleLow = (a.title||'').toLowerCase();
@@ -1622,11 +1614,11 @@ function renderArticleCards(body, articles, idx, kw) {
     card.setAttribute('data-orig', a.title||'');
     card.innerHTML = `
       <div class="n-meta">
+        ${a.flag ? `<span class="n-flag">${a.flag}</span>` : ''}
+        ${a.srcLabel && a.srcLabel !== a.source ? `<span class="n-srclabel">${esc(a.srcLabel)}</span><span class="n-dot"></span>` : ''}
         <span class="n-src">${esc(a.source||'')}</span>
         <span class="n-dot"></span>
         <span class="n-time">${relTime(a.pubDate)}</span>
-        <span class="n-flag">${a.flag||''}</span>
-        ${isFlash ? '<span class="n-flash">⚡</span>' : ''}
         ${isNew ? '<span class="n-new">NEW</span>' : ''}
       </div>
       <div class="n-title">${boldKeywords(a.title, kw)}</div>`;

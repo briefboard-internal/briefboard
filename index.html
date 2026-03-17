@@ -1036,35 +1036,65 @@ async function _scholarDrain() {
 async function _scholarFetch(query) {
   const scholarCacheKey = 'scholar|' + query.toLowerCase();
   if (gnewsCache[scholarCacheKey]) return gnewsCache[scholarCacheKey];
-  const apiUrl = `https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(query)}&limit=15&fields=title,authors,year,externalIds,openAccessPdf,publicationDate`;
+
+  // クエリ正規化：OR分解 → 英語alias展開 → 日本語除去
+  const isJapanese = s => /[\u3000-\u9FFF\uF900-\uFAFF]/.test(s);
+  const rawTerms   = query.split(/\s+OR\s+/i).map(t => t.trim()).filter(Boolean);
+  const enTerms    = [];
+  rawTerms.forEach(term => {
+    const aliases = [...new Set(getAliases(term).concat(getAliases(term.toLowerCase())))];
+    const en      = aliases.filter(a => !isJapanese(a) && a.length >= 2);
+    if (en.length) enTerms.push(...en);
+    else if (!isJapanese(term) && term.length >= 2) enTerms.push(term);
+  });
+  const deduped    = [...new Set(enTerms)].slice(0, 4);
+  const finalQuery = deduped.length ? deduped.join(' ') : query;
+
+  // sort パラメータは /paper/search では無効 → 省略（デフォルトで関連度順）
+  const apiUrl = `https://api.semanticscholar.org/graph/v1/paper/search`
+    + `?query=${encodeURIComponent(finalQuery)}`
+    + `&limit=50`
+    + `&fields=title,authors,year,externalIds,openAccessPdf`;
+
   for (let attempt = 0; attempt < 4; attempt++) {
     try {
       if (attempt > 0) await new Promise(r => setTimeout(r, 1000 * attempt));
       const res = await fetch(apiUrl, {signal: AbortSignal.timeout(15000)});
       if (res.status === 429) continue;
-      if (!res.ok) break;
+      if (!res.ok) {
+        // デバッグ用：失敗ステータスをログ
+        console.warn('Scholar API error:', res.status, finalQuery);
+        break;
+      }
       const data = await res.json();
       if (!data?.data?.length) break;
-      const items = data.data.map(p => {
-        const doi   = p.externalIds?.DOI;
-        const arxiv = p.externalIds?.ArXiv;
-        const link  = p.openAccessPdf?.url
-          || (arxiv ? `https://arxiv.org/abs/${arxiv}` : null)
-          || (doi   ? `https://doi.org/${doi}` : null)
-          || `https://www.semanticscholar.org/paper/${p.paperId}`;
-        const author = p.authors?.[0]?.name || '';
-        const year   = p.year || '';
-        return {
-          title:   p.title || '',
-          link,
-          source:  author ? `${author}${year ? ' ('+year+')' : ''}` : 'Semantic Scholar',
-          pubDate: p.publicationDate || '',
-          flag:    '🎓',
-        };
-      });
+
+      const items = data.data
+        .filter(p => p.title)
+        .map(p => {
+          const doi   = p.externalIds?.DOI;
+          const arxiv = p.externalIds?.ArXiv;
+          const pmid  = p.externalIds?.PubMed;
+          const link  = p.openAccessPdf?.url
+            || (arxiv ? `https://arxiv.org/abs/${arxiv}` : null)
+            || (doi   ? `https://doi.org/${doi}` : null)
+            || (pmid  ? `https://pubmed.ncbi.nlm.nih.gov/${pmid}` : null)
+            || `https://www.semanticscholar.org/paper/${p.paperId}`;
+          const author  = p.authors?.[0]?.name || '';
+          const year    = p.year ? String(p.year) : '';
+          return {
+            title:   p.title,
+            link,
+            source:  author ? `${author}${year ? ' ('+year+')' : ''}` : 'Semantic Scholar',
+            pubDate: year ? `${year}-01-01` : '',
+            flag:    '🎓',
+          };
+        });
       gnewsCache[scholarCacheKey] = items;
       return items;
-    } catch(e) {}
+    } catch(e) {
+      console.warn('Scholar fetch error:', e.message);
+    }
   }
   return gnewsCache[scholarCacheKey] || [];
 }
